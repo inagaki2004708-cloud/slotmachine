@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <div id="depositModal" class="stat-overlay" style="display: none;">
+  <div class="deposit-content">
+    <h2>入金（クレジット追加）</h2>
+    <p>追加する金額を選択してください</p>
+    
+    <div class="deposit-options">
+      <button onclick="processDeposit(1000, 50)">1,000円 (50枚)</button>
+      <button onclick="processDeposit(3000, 150)">3,000円 (150枚)</button>
+      <button onclick="processDeposit(5000, 250)">5,000円 (250枚)</button>
+      <button onclick="processDeposit(10000, 500)">10,000円 (500枚)</button>
+    </div>
+    
+    <button class="close-modal-btn" onclick="closeDepositModal()">キャンセル</button>
+  </div>
+</div>
+  <!-- manifestの読み込み -->
+  <link rel="manifest" href="manifest.json">
+  <!-- Service Workerの登録 -->
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('sw.js').then(function(registration) {
+        console.log('ServiceWorker registration successful');
+      }, function(err) {
+        console.log('ServiceWorker registration failed: ', err);
+      });
+    });
+  }
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SLOT MACHINE HTML Slot - Real Style</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dseg@2.1.0/css/dseg.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="top-left-buttons">
+<img src="image/setting.png" id="settingBtn" class="stat-btn" onclick="openSetting()" alt="設定">
+
+<!-- 通常画面の右上に表示する統計ボタン -->
+</div><div class="top-right-buttons">
+  <img src="image/auto.png" id="autoBtn" class="stat-btn" onclick="toggleAutoPlay()" alt="オート">
+    <img src="image/statistics.png" id="statBtn" class="stat-btn" onclick="openStatistics()" alt="統計">
+</div>
+
+<div id="statOverlay" class="stat-overlay" style="display: none;">
+  <img src="image/return.png" class="return-btn" onclick="closeStatistics()" alt="戻る">
+  
+  <div class="data-counter-container">
+    <div class="dc-header">
+      <div class="dc-call">呼出</div>
+      <div class="dc-title">データ</div>
+    </div>
+
+  <canvas id="slumpGraph" width="560" height="200"></canvas>
+    
+    <table class="dc-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="color-total">大当り</th>
+          <th class="color-big">ＢＩＧ</th>
+          <th class="color-reg">ＲＥＧ</th>
+          <th class="color-games">累計</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="row-label">本日</td>
+          <td class="val val-total" id="statTotalBonus">0</td>
+          <td class="val val-big" id="statBBCount">0</td>
+          <td class="val val-reg" id="statRBCount">0</td>
+          <td class="val val-games" id="statTotalGames">0</td>
+        </tr>
+     </tbody>
+    </table>
+
+    <div class="dc-footer">
+      <div class="dc-record-label">過去最高</div>
+      <div class="dc-record-val"><span class="color-big">ＢＩＧ</span> <span class="val val-big">0</span></div>
+      <div class="dc-record-val"><span class="color-reg">ＲＥＧ</span> <span class="val val-reg">0</span></div>
+    </div>
+
+    <div class="dc-extra">
+      <span>現在: <span id="statCurrentGames">0</span>G</span>
+      <span>合算: 1/<span id="statTotalProb">-</span></span>
+      <span>所持: <span id="statCoins">0</span>枚</span>
+    </div>
+  </div>
+</div>
+
+<!-- ▼▼ 追加箇所：設定メニュー用のオーバーレイ ▼▼ -->
+<div id="settingOverlay" class="stat-overlay" style="display: none;">
+  <div class="setting-menu-wrapper" style="position: relative; display: flex; justify-content: center; align-items: center;">
+    <!-- 設定メニューの背景画像 -->
+    <img src="image/statisticsmenu.png" alt="設定メニュー" style="max-width: 90vw; max-height: 90vh;">
+    
+    <!-- 設定メニューの右上に配置する戻るボタン -->
+    <img src="image/return.png" class="return-btn-setting" onclick="closeSetting()" alt="戻る">
+    
+    <!-- 画像の上に重ねる設定UI -->
+    <div class="setting-ui-container">
+      <h2>設定変更</h2>
+      <p>現在の設定: <span id="currentSettingDisplay">6</span></p>
+      <div class="setting-buttons">
+        <button onclick="changeSetting(1)">1</button>
+        <button onclick="changeSetting(2)">2</button>
+        <button onclick="changeSetting(3)">3</button>
+        <button onclick="changeSetting(4)">4</button>
+        <button onclick="changeSetting(5)">5</button>
+        <button onclick="changeSetting(6)">6</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="game-container">
+  
+  <div id="machine">
+    
+    <div class="reels-window">
+    <div class="reel" id="reel0">
+      <div class="reel-tape" id="reelTape0"></div>
+    </div>
+    <div class="reel" id="reel1">
+      <div class="reel-tape" id="reelTape1"></div>
+    </div>
+    <div class="reel" id="reel2">
+      <div class="reel-tape" id="reelTape2"></div>
+    </div>
+  </div>
+
+    <div id="creditDisplay" class="seg-item">50</div>
+<div id="countDisplay" class="seg-item"></div>
+<div id="payoutDisplay" class="seg-item">0</div>
+    <div id="gogoLamp"></div>
+
+    <div class="bet-lamps-area">
+        <div id="betLamp3" class="bet-lamp"></div>
+        <div id="betLamp2" class="bet-lamp"></div>
+        <div id="betLamp1" class="bet-lamp"></div>
+    </div>
+
+   <div class="indicators-area">
+        <div id="indStart"></div>
+        <div id="indReplay"></div>
+        <div id="indWait"></div>
+        <div id="indInsertMedals"></div>
+    </div>
+
+    <div class="machine-stop-buttons">
+  <button class="btn-stop-invisible" id="btnStop0" onpointerdown="stopSpin(0)" onpointerup="releaseStop()" disabled></button>
+  <button class="btn-stop-invisible" id="btnStop1" onpointerdown="stopSpin(1)" onpointerup="releaseStop()" disabled></button>
+  <button class="btn-stop-invisible" id="btnStop2" onpointerdown="stopSpin(2)" onpointerup="releaseStop()" disabled></button>
+</div>
+
+  </div>
+  
+<div class="sidebar-wrapper">
+
+      <div class="hand-coins-display">
+        <div class="g-count">G数: <span id="gameCountDisplay">0</span></div>
+        <div class="coins"> 所持枚数: <span id="handCoinsDisplay">0</span></div>
+      </div>
+
+      <div class="sidebar-controls">
+        <div class="bet-group">
+          <button class="sidebar-btn-bet" id="btnBet" onclick="bet()">MAX BET</button>
+          <div class="single-and-reset-group">
+            <button class="btn-single-bet" id="btnSingleBet" onclick="betSingle()"></button>
+            <button class="btn-reset" id="btnReset" onclick="resetBet()"></button>
+          </div>
+        </div>
+
+        <div class="lever-group">
+          <button class="sidebar-btn-start" id="btnStart" onclick="startSpin()" disabled></button>
+        </div>
+
+        <div class="stop-group">
+          <button class="btn-real-stop" id="panelStop0" onpointerdown="stopSpin(0)" onpointerup="releaseStop()" disabled></button>
+          <button class="btn-real-stop" id="panelStop1" onpointerdown="stopSpin(1)" onpointerup="releaseStop()" disabled></button>
+          <button class="btn-real-stop" id="panelStop2" onpointerdown="stopSpin(2)" onpointerup="releaseStop()" disabled></button>
+        </div>
+      </div>
+    </div>
+ </div>
+
+
+ <script src="script.js"></script>
+</body>
+</html>

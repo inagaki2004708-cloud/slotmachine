@@ -1,0 +1,1082 @@
+body {
+  background-color: #111;
+  color: white;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* height: 100vh; ←これを削除または変更 */
+  height: 100dvh; 
+  margin: 0;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+/* ▼▼ 統計画面用の追加CSS ▼▼ */
+  
+  /* メイン画面の右上に配置する統計ボタン */
+  .top-right-buttons {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 15px; /* 横並びの間隔 */
+  z-index: 1000;
+}
+
+  .stat-btn {
+    width: 60px;  /* アイコンの大きさに合わせて変更してください */
+    height: auto;
+    cursor: pointer;
+    z-index: 1000;
+    transition: transform 0.1s;
+  }
+  .stat-btn:active {
+    transform: scale(0.9);
+  }
+
+  /* 統計を押した時に画面を覆う真っ黒な半透明背景 */
+  .stat-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* 背景を暗くする */
+    z-index: 2000; /* 全ての手前に表示 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* オーバーレイ画面の右上に配置する戻るボタン */
+  .return-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 60px; /* アイコンの大きさに合わせて変更してください */
+    height: auto;
+    cursor: pointer;
+    z-index: 2001;
+    transition: transform 0.1s;
+  }
+  .return-btn:active {
+    transform: scale(0.9);
+  }
+
+  /* 中央に表示する統計画像 */
+  .stat-image-large {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+  }
+  
+  /* ▲▲ 統計画面用の追加CSSここまで ▲▲ */
+.return-btn-setting {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 50px;
+  height: auto;
+  cursor: pointer;
+  z-index: 2001;
+  transition: transform 0.1s;
+}
+.return-btn-setting:active {
+  transform: scale(0.9);
+}
+
+.setting-ui-container {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.setting-ui-container h2 {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+}
+
+.setting-ui-container p {
+  font-size: 20px;
+  margin: 0 0 20px 0;
+  font-weight: bold;
+}
+
+.setting-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.setting-buttons button {
+  width: 60px;
+  height: 60px;
+  font-size: 24px;
+  font-weight: bold;
+  border-radius: 50%;
+  border: 2px solid #555;
+  background: linear-gradient(135deg, #444, #111);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+}
+
+.setting-buttons button:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+  /* 全体のレイアウト設定 */
+  body {
+    background-color: #111;
+    color: white;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+  
+  /* メインコンテナ：筐体とサイドバーを横並びに */
+  .game-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    height: 95vh;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  /* 筐体（アップロードされた実機画像をベースに絶対配置） */
+  #machine {
+    position: relative;
+    height: 100%;
+    aspect-ratio: 1000 / 1675; /* ジャグラー台.jpg の正確な縦横比 */
+    background-image: url('image/machine.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+  }
+
+  .reels-window {
+    position: absolute;
+    top: 29.4%;    
+    left: 18%;   
+    width: 63.0%;  
+    height: 12.5%; 
+    display: flex;
+    justify-content: space-between;
+    overflow: hidden;
+    z-index: 50; 
+    background: #000;
+    border: 2px solid #0a0a0a; 
+    box-sizing: border-box;
+    box-shadow: 
+      0 4px 10px rgba(0,0,0,0.9),
+      inset 0 0 20px rgba(0,0,0,0.6);
+  }
+  
+  .reels-window::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; 
+    z-index: 100;
+    
+    background:
+      linear-gradient(to bottom, transparent 48%, rgba(255,255,255,0.2) 50%, transparent 52%),
+      linear-gradient(to bottom, 
+        rgba(0, 0, 0, 0.4) 0%,    
+        rgba(0, 0, 0, 0.1) 4%,     
+        transparent 5%,           
+        transparent 95%,           
+        rgba(0, 0, 0, 0.1) 96%,    
+        rgba(0, 0, 0, 0.4) 100%   
+      );
+  
+     box-shadow: 
+      inset 0 3px 1px rgba(0, 0, 0, 0.95), 
+      inset 0 -3px 1px rgba(0, 0, 0, 0.95),
+      inset 3px 0 1px rgba(0, 0, 0, 0.7),
+      inset -3px 0 1px rgba(0, 0, 0, 0.7);
+  }
+    .reels-window::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 150%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(255, 255, 255, 0.03) 40%,
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0.03) 60%,
+      transparent 100%
+    );
+    transform: skewX(-25deg);
+    pointer-events: none;
+    z-index: 90;
+    opacity: 0; 
+    transition: opacity 0.2s;
+  }
+  .reels-window.spinning::before {
+    opacity: 1;
+    animation: glass-reflection 1.8s infinite linear;
+  }
+  @keyframes glass-reflection {
+    0% { left: -150%; }
+    100% { left: 150%; }
+  }
+  .machine-stop-buttons { z-index: 60; }
+@keyframes segFlicker {
+  0%, 100% { opacity: 1; text-shadow: 0 0 4px #ff0000, 0 0 10px #ff0000, 0 0 18px #ff0000; }
+  50% { opacity: 0.7; text-shadow: 0 0 2px #ff0000, 0 0 5px #ff0000, 0 0 10px #ff0000; }
+}
+  .seg-item { 
+   position: absolute;                
+   z-index: 60;                        
+   font-family: 'DSEG7-Classic', sans-serif; 
+   font-style: italic;  
+   font-weight: bold; 
+   color: #ff3333;          
+   text-shadow: 
+      0 0 4px #ff0000, 
+      0 0 10px #ff0000, 
+      0 0 18px #ff0000;
+   animation: segFlicker 0.05s infinite;
+   will-change: opacity, text-shadow; 
+   transform: translateZ(0);
+   backface-visibility: hidden;
+  }
+
+@keyframes blink-line {
+  0% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.3; filter: brightness(1.5); }
+  100% { opacity: 1; filter: brightness(1); }
+}
+
+.blink-anim {
+  animation: blink-line 0.15s infinite alternate;
+}
+  
+  #creditDisplay {
+    top: 44.3%;       
+    left: 36.0%;      
+    font-size: 7px;
+  }
+
+  #countDisplay {
+    top: 44.3%;
+    left: 48%;
+    font-size: 7px;
+  }
+
+  #payoutDisplay {
+    top: 44.3%;
+    left: 61.8%;
+    font-size: 7px;
+  }
+
+  
+  /* 各ランプの縦位置と高さ（実機画像に合わせて微調整してください） */
+  #indStart { top: 27%; height: 1%; }
+  #indReplay { top: 31%; height: 1%; }
+  #indWait { top: 35.5%; height: 1%; }
+  #indInsertMedals { top: 39%; height: 2%; }
+
+  /* 背景画像の文字の上に被せた時に「文字自体が光っている」ように見せる色と強い影 */
+  .indicators-area #indStart.on { background-color: rgba(255, 255, 0, 0.5); box-shadow: 0 0 15px 5px rgba(255, 255, 0, 0.6); }
+  .indicators-area #indReplay.on { background-color: rgba(0, 255, 100, 0.5); box-shadow: 0 0 15px 5px rgba(0, 255, 100, 0.6); }
+  .indicators-area #indWait.on { background-color: rgba(255, 50, 0, 0.5); box-shadow: 0 0 15px 5px rgba(255, 50, 0, 0.6); }
+  .indicators-area #indInsertMedals.on { background-color: rgba(255, 255, 0, 0.5); box-shadow: 0 0 15px 5px rgba(255, 255, 0, 0.6); }
+  .reel {
+    width: 30.5%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    background-color: #fff;
+  }
+
+ .reel-tape {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  will-change: transform; 
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+    .reel-cell {
+    height: calc(100% / 23); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    transition: filter 0.1s ease;
+  }
+  
+  
+  .reel-cell img {
+    height: 90%; 
+    width: 90%;
+    display: block;
+    object-fit: contain;
+    margin: 0 auto;
+  }
+
+  .reel-window {
+  background-color: #fff; 
+  border: 2px solid #333;
+}
+
+  
+.glow-seven-text {
+  color: #ff0033 !important;
+  font-weight: bold;
+  text-shadow: 0 0 6px #ff0033, 0 0 12px #ff0033, 0 0 25px #ff3366;
+  animation: pulse 0.5s infinite alternate; /* 軽く明滅させてさらに目立たせる */
+}
+
+/* 画像（imgタグ）で「7」を表示している場合 */
+.glow-seven-img {
+  filter: drop-shadow(0 0 1px #ff0033) drop-shadow(0 0 15px #ff0033);
+}
+
+/* 明滅アニメーション（お好みで） */
+@keyframes pulse {
+  from { opacity: 0.8; }
+  to { opacity: 1; }
+}
+
+  /* 画面中央の実機ストップボタン（丸い赤ボタン3つの位置） */
+  .machine-stop-buttons {
+    position: absolute;
+    top: 52.6%;
+    left: 33.8%;
+    width: 32.4%;
+    height: 5.5%;
+    display: flex;
+    justify-content: space-between;
+    z-index: 20;
+  }
+
+  /* 透明なストップボタン */
+  .btn-stop-invisible {
+    width: 26%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(255, 0, 0, 0); /* 通常時は完全に透明 */
+    border: none;
+    cursor: pointer;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+  }
+
+  /* ボタンが押された時の視覚的フィードバック（わずかに白く光る） */
+  .btn-stop-invisible:active {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* リール回転中かつタップ可能な状態のカーソル表示 */
+  .btn-stop-invisible:not(:disabled) {
+    cursor: pointer;
+  }
+  .btn-stop-invisible:disabled {
+    cursor: not-allowed;
+    pointer-events: none; /* 無効化時はタップを反応させない */
+  }
+
+  /* --- GOGOランプの修正 --- */
+  #gogoLamp {
+    position: absolute;
+    top: 43%;
+    left: 8%;
+    width: 13%;
+    height: 7%;
+    z-index: 100;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
+    background-image: none; 
+    filter: none;
+    opacity: 0;
+    
+    transition: opacity 0.15s ease-in, filter 0.15s ease-in, background 0.15s ease-in;
+  }
+  #gogoLamp.on {
+    
+    background: url('image/star.png') center/contain no-repeat, radial-gradient(circle at 50% 50%, rgba(255, 255, 230, 0.9) 0%, rgba(255, 100, 150, 0.4) 40%, transparent 70%);
+    opacity: 1;
+    filter: drop-shadow(0 0 3px #ffffff) drop-shadow(0 0 10px #ff00ff) drop-shadow(0 0 22px #0077ff) brightness(1.6);
+    animation: gogo-flicker 0.15s infinite alternate;
+  }
+
+/* BIGプレミアム用のレインボークラス */
+#gogoLamp.rainbow {
+  background: url('image/star.png') center/contain no-repeat, radial-gradient(circle at 50% 50%, rgba(255, 255, 230, 0.9) 0%, rgba(255, 100, 150, 0.4) 40%, transparent 70%);
+  opacity: 1;
+  animation: gogo-flicker 0.15s infinite alternate, gogo-rainbow 3s infinite linear;
+}
+
+  /* --- インジケーター（Start, Replay, Wait, Insert）の修正 --- */
+  .indicators-area div {
+    position: absolute;
+    left: 84%;
+    width: 10%;
+    background-color: transparent; 
+    border-radius: 50%;
+    /* ★修正：ボワッとしたラグを追加 */
+    transition: background 0.15s ease-in, box-shadow 0.15s ease-in, opacity 0.15s ease-in;
+    mix-blend-mode: hard-light; 
+  }
+  /* ★修正：中心を白/黄色に寄せたグラデーションで「電球の芯」を表現 */
+  .indicators-area #indStart.on { background: radial-gradient(circle, #ffffff 0%, #ffeb66 30%, rgba(255, 247, 0, 0.5) 70%, transparent 100%); box-shadow: 0 0 15px rgba(255, 170, 0, 0.8); }
+  .indicators-area #indReplay.on { background: radial-gradient(circle, #ffffff 0%, #88ffaa 30%, rgba(0, 255, 102, 0.5) 70%, transparent 100%); box-shadow: 0 0 15px rgba(0, 153, 51, 0.8); }
+  .indicators-area #indWait.on { background: radial-gradient(circle, #ffffff 0%, #ff8855 30%, rgba(255, 42, 0, 0.5) 70%, transparent 100%); box-shadow: 0 0 15px rgba(153, 0, 0, 0.8); }
+  .indicators-area #indInsertMedals.on { background: radial-gradient(circle, #ffffff 0%, #ffeb66 30%, rgba(255, 247, 0, 0.5) 70%, transparent 100%); box-shadow: 0 0 15px rgba(255, 170, 0, 0.8); }
+
+  /* --- BETランプの修正 --- */
+  .bet-lamp {
+    position: absolute; 
+    width: 5%; 
+    left: 9.5%; 
+    top: 28.5%;      
+    aspect-ratio: 1 / 1;
+    background-color: rgba(40, 0, 0, 0.5);
+    border-radius: 50%;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+    opacity: 0.9; /* 通常時の不透明度を修正 */
+    /* ★修正：ボワッとしたラグを追加 */
+    transition: background 0.15s ease-in, box-shadow 0.15s ease-in, opacity 0.15s ease-in;
+  }
+  .bet-lamp.on {
+    opacity: 0.9;
+    /* ★修正：中心が白っぽく、外側が赤い電球の発光コアを表現 */
+    background: radial-gradient(circle at 45% 45%, #ffffff 0%, #ffbb88 20%, #ff0000 60%, #990000 100%);
+    box-shadow: 
+      0 0 10px #ff0000, 
+      0 0 20px #ff3333, 
+      inset 0 0 8px rgba(255, 255, 255, 0.8); /* 内側の反射も強める */
+    border: 1px solid #ff6666;
+  }
+
+  /* --- 操作パネル（旧サイドバー）の立体的なレイアウト --- */
+  .sidebar-controls {
+    display: grid;
+    grid-template-columns: 140px 100px 240px; /* 左:BETエリア, 中:レバー, 右:ストップボタン */
+    align-items: center;
+    gap: 15px;
+    background: linear-gradient(180deg, #222 0%, #111 100%);
+    border: 3px solid #444;
+    border-radius: 16px;
+    padding: 15px 25px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.8);
+    user-select: none;
+    box-sizing: border-box;
+  }
+
+  /* ベットボタンエリア（縦に2つ並べる） */
+  .bet-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+
+  /* 赤色楕円形のMAX BETボタン */
+  .sidebar-btn-bet {
+    width: 120px;
+    height: 45px;
+    border-radius: 50px; /* 完全な楕円形にする */
+    background: linear-gradient(130deg, #ff3333, #990000);
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    border: 2px solid #555;
+    box-shadow: 0 4px 0 #000;
+    cursor: pointer;
+    transition: transform 0.05s, box-shadow 0.05s;
+  }
+/* ボタンを横並びにする設定 */
+  .single-and-reset-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+  /* 1枚掛けボタン：金属系の銀色 */
+.btn-single-bet {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e0e0e0, #9e9e9e, #757575);
+  border: 2px solid #555;
+  cursor: pointer;
+}
+
+/* リセットボタン：小さく丸い赤色 */
+.btn-reset {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff5252, #d32f2f);
+  border: 1px solid #333;
+  cursor: pointer;
+}
+
+  /* レバーエリア */
+  .lever-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* レバーボタン（修正） */
+  .sidebar-btn-start {
+    width: 70px;          /* 少し大きく */
+    height: 70px;
+    border-radius: 50%;   /* 丸型 */
+    background: linear-gradient(130deg, #333 0%, #000 100%);
+    border: 3px solid #555;
+    box-shadow: 0 6px 0 #000;
+    cursor: pointer;
+    transition: transform 0.05s, box-shadow 0.05s;
+  }
+  
+  .sidebar-btn-start:active:not(:disabled) {
+    transform: translateY(5px);
+    box-shadow: none;
+  }
+
+  /* ストップボタンエリア（横に3つ並べる） */
+  .stop-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+  }
+
+  /* リアルなデザインのストップボタン（赤い発光リング） */
+  .btn-real-stop {
+    width: 65px;          /* 正円 */
+    height: 65px;
+    border-radius: 50%;   /* 丸型 */
+    
+    /* ボタンのベース色（黒に近いメタリック） */
+    background: radial-gradient(circle at 30% 30%, #444 0%, #000 100%);
+    
+    /* 4pxの赤い太枠と、発光の影 */
+    border: 4px solid #ff0000;
+    box-shadow: 
+      0 0 10px #ff0000,        /* 外側の赤いぼかし（発光感） */
+      inset 0 0 10px #ff0000,   /* 内側の赤いぼかし（レンズの輝き） */
+      0 4px 0 #8b0000;          /* ボタンの物理的な立体感 */
+      
+    color: transparent;   /* 文字を隠す */
+    cursor: pointer;
+    transition: transform 0.05s, box-shadow 0.05s;
+    touch-action: none;
+  }
+
+  /* 押した時の挙動 */
+  .btn-real-stop:active:not(:disabled) {
+    transform: translateY(4px);
+    /* 押すと光が少し沈む（影を薄くする） */
+    box-shadow: 
+      0 0 5px #ff0000,
+      inset 0 0 5px #ff0000;
+  }
+  .btn-real-stop:disabled {
+    background: radial-gradient(circle at 30% 30%, #333 0%, #111 100%); /* 暗いベース色 */
+    border: 4px solid #444; /* 赤い枠線を暗いグレーに */
+    box-shadow: 0 4px 0 #111; /* 発光を完全に消し、物理的な厚みの影だけ残す */
+    filter: none; /* 全体共通のグレースケールを解除 */
+    opacity: 1; /* ボタン自体の透過はさせない */
+  }
+
+  /* ボタン共通の沈み込みエフェクト */
+  .sidebar-controls button:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow: none;
+  }
+
+  .sidebar-controls button:disabled {
+    opacity: 0.4;
+    filter: grayscale(80%);
+    cursor: not-allowed;
+  }
+
+  /* 画面全体のレイアウトを右側に固定できるように調整 */
+  .game-container {
+    max-width: 1100px; /* パネルが横に広がるため少し拡大 */
+  }
+
+  
+/* ★追加：サイドバー全体をまとめるラッパー */
+  .sidebar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  
+  /* --- PC版でのG数・所持枚数表示の復元とデザイン --- */
+.hand-coins-display {
+  display: flex !important;       /* 他の箇所で display: none されていても強制的に復元 */
+  justify-content: space-between; /* 左右に綺麗に振り分け */
+  align-items: center;
+  
+  background-color: rgba(20, 20, 20, 0.85); /* 暗めの背景を敷いて数値を見やすく */
+  padding: 12px 15px;
+  margin-bottom: 20px;            /* 下の操作ボタン（MAX BETなど）との隙間 */
+  border-radius: 8px;
+  border: 1px solid #444;         /* 薄い枠線 */
+  
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* 各テキスト（G数、所持枚数）の微調整 */
+.hand-coins-display .g-count {
+  color: #fff;
+}
+.hand-coins-display .coins {
+  color: #ffd700; /* 所持枚数は目立つようにゴールド（黄）系に */
+}
+  
+  #gameCountDisplay {
+    color: #00ffcc; 
+    font-family: 'DSEG7-Classic', sans-serif;
+    font-size: 24px;
+    margin-left: 5px;
+    text-shadow: 0 0 5px rgba(0, 255, 204, 0.5);
+    transform: translateZ(0);
+  backface-visibility: hidden;
+  }  
+  .hand-coins-display span {
+    font-size: 24px;
+    font-family: 'DSEG7-Classic', sans-serif;
+    margin-left: 10px;
+    text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
+    transform: translateZ(0);
+  backface-visibility: hidden;
+  }
+  .stat-content-wrapper {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* 中央に表示する統計画像（既存のクラスを上書き・調整） */
+  .stat-image-large {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    object-fit: contain;
+  }
+
+  /* 画像の上に重なるテキストコンテナ */
+  .stat-text-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%; /* 画像内の描画エリアに合わせて調整してください */
+    height: 80%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* 縦方向の中央揃え */
+    align-items: center;     /* 横方向の中央揃え */
+    color: white;            /* 文字色（画像の背景に合わせて変更してください） */
+    font-size: 4vw;          /* スマホ等で相対的に文字サイズが変わるように設定 */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* 文字を見やすくする縁取り */
+    pointer-events: none;    /* クリックイベントを阻害しない */
+  }
+
+  .stat-row {
+    margin: 8px 0;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* PC等の大きな画面用の文字サイズ調整 */
+  @media (min-width: 850px) {
+    .stat-text-overlay {
+      font-size: 24px;
+    }
+  }
+/* データランプ風デザインのスタイル */
+.data-counter-container {
+  background-color: #050505; /* 液晶の黒 */
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 15px;
+  width: 95%;
+  max-width: 600px;
+  font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.9), inset 0 0 10px #111;
+  color: #fff;
+}
+
+.dc-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #222;
+  padding-bottom: 5px;
+}
+
+.dc-call {
+  background-color: #d00;
+  color: white;
+  padding: 2px 12px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: inset 0 0 5px rgba(255,255,255,0.3);
+}
+
+.dc-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ccc;
+  letter-spacing: 2px;
+  margin-left: 15px;
+}
+
+.dc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+  background-color: #000;
+}
+
+.dc-table th, .dc-table td {
+  border: 1px solid #333; /* うっすらとしたグリッド線 */
+  padding: 8px 4px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.dc-table th {
+  font-size: 13px;
+  font-weight: normal;
+  background-color: #111;
+}
+
+.row-label {
+  color: #00e5ff;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.val {
+  font-size: 24px;
+  font-weight: bold;
+  font-family: 'Arial', sans-serif; /* 数字を見やすく */
+}
+
+/* 発光色（テキストシャドウでネオン感を演出） */
+.color-total, .val-total { color: #5eff5e; text-shadow: 0 0 6px rgba(94, 255, 94, 0.6); }
+.color-big, .val-big     { color: #ff3333; text-shadow: 0 0 6px rgba(255, 51, 51, 0.6); }
+.color-reg, .val-reg     { color: #ffaa00; text-shadow: 0 0 6px rgba(255, 170, 0, 0.6); }
+.color-games, .val-games { color: #e0f7fa; text-shadow: 0 0 6px rgba(224, 247, 250, 0.6); }
+
+.dc-footer {
+  display: flex;
+  justify-content: flex-start;
+  gap: 25px;
+  align-items: center;
+  border-top: 2px solid #222;
+  padding-top: 10px;
+  margin-bottom: 15px;
+}
+
+.dc-record-label {
+  color: #ffaa00;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.dc-record-val {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.dc-record-val span:first-child { 
+  font-size: 13px; 
+}
+
+/* 現在G数などのサブ情報バー */
+.dc-extra {
+  display: flex;
+  justify-content: space-around;
+  background: #1a1a1a;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #ddd;
+  border: 1px solid #333;
+}
+img {
+  max-width: 100%;
+  height: auto;
+}
+#betLamp3 { top: 28.5%; } /* 上：3枚掛けランプ */
+#betLamp2 { top: 32.3%; } /* 中：2枚掛けランプ（+3.8%下げる） */
+#betLamp1 { top: 36.1%; } /* 下：1枚掛けランプ（さらに+3.8%下げる） */
+/* --- BETランプの発光色を個別に設定 --- */
+
+/* 3枚掛けランプ (赤色 - 現在の設定を維持) */
+#betLamp3.on {
+  background: radial-gradient(circle at 45% 45%, #ffffff 0%, #ffbb88 20%, #ff0000 60%, #990000 100%);
+  box-shadow: 0 0 10px #ff0000, 0 0 20px #ff3333, inset 0 0 8px rgba(255, 255, 255, 0.8);
+  border: 1px solid #ff6666;
+}
+
+/* 2枚掛けランプ (緑色) */
+#betLamp2.on {
+  background: radial-gradient(circle at 45% 45%, #ffffff 0%, #aaffaa 20%, #00cc00 60%, #006600 100%);
+  box-shadow: 0 0 10px #00cc00, 0 0 20px #33ff33, inset 0 0 8px rgba(255, 255, 255, 0.8);
+  border: 1px solid #66ff66;
+}
+
+/* 1枚掛けランプ (青色) */
+#betLamp1.on {
+  background: radial-gradient(circle at 45% 45%, #ffffff 0%, #aaaaff 20%, #0066ff 60%, #000099 100%);
+  box-shadow: 0 0 10px #0066ff, 0 0 20px #3399ff, inset 0 0 8px rgba(255, 255, 255, 0.8);
+  border: 1px solid #6699ff;
+}
+/* ▼▼ スランプグラフ用CSS ▼▼ */
+#slumpGraph {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  background-color: #050505;
+  border: 1px solid #333;
+  border-radius: 4px;
+  margin-bottom: 15px; /* 表との間隔 */
+  display: block;
+}
+/* レバーが押された時に下にずらすアニメーション */
+.sidebar-btn-start:active,
+.sidebar-btn-start.lever-down {
+  transform: translateY(10px) !important;
+  box-shadow: 0 0px 0 #000 !important;
+}
+/* ▼▼ 追加：プレミアム演出用のGOGOランプ ▼▼ */
+#gogoLamp.premium-only-gogo {
+  background: url('image/onlygogo.png') center/contain no-repeat, radial-gradient(circle at 50% 50%, rgba(255, 255, 230, 0.9) 0%, rgba(255, 100, 150, 0.4) 40%, transparent 70%);
+  opacity: 1;
+  filter: drop-shadow(0 0 3px #ffffff) drop-shadow(0 0 10px #ff00ff) drop-shadow(0 0 22px #0077ff) brightness(1.6);
+  animation: gogo-flicker 0.15s infinite alternate;
+}
+
+#gogoLamp.premium-only-chance {
+  background: url('image/onlychance.png') center/contain no-repeat, radial-gradient(circle at 50% 50%, rgba(255, 255, 230, 0.9) 0%, rgba(255, 100, 150, 0.4) 40%, transparent 70%);
+  opacity: 1;
+  filter: drop-shadow(0 0 3px #ffffff) drop-shadow(0 0 10px #ff00ff) drop-shadow(0 0 22px #0077ff) brightness(1.6);
+  animation: gogo-flicker 0.15s infinite alternate;
+}
+/* 左上に配置するボタン（設定） */
+.top-left-buttons {
+  position: fixed;
+  top: 5px;           /* 右側と数値を同じにする */
+  left: 1px;
+  display: flex;
+  align-items: center; /* 追加：縦方向の中心を揃える */
+  gap: 15px;
+  z-index: 1000;
+}
+ .setting-btn {
+  width: 60px;         /* 統計ボタンと同じサイズ */
+  height: auto;
+  cursor: pointer;
+  z-index: 1000;
+  transition: transform 0.1s;
+}
+
+/* 右上に配置するボタン（オート・統計） */
+.top-right-buttons {
+  position: fixed;
+  top: 20px;           /* 左側と数値を同じにする */
+  right: 20px;
+  display: flex;
+  align-items: center; /* 追加：縦方向の中心を揃える */
+  gap: 15px; 
+  z-index: 1000;
+}
+/* ▼▼ 入金モーダル用のスタイル ▼▼ */
+.deposit-content {
+  background-color: #222;
+  padding: 20px 30px;
+  border-radius: 12px;
+  border: 2px solid #555;
+  text-align: center;
+  color: white;
+  width: 90%;
+  max-width: 320px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  /* 統計画面より手前に出す場合は z-index を調整 */
+  z-index: 2500; 
+}
+
+.deposit-content h2 {
+  margin-top: 0;
+  font-size: 18px;
+  color: #ffd700; /* ゴールドっぽい色 */
+}
+
+.deposit-content p {
+  font-size: 13px;
+  color: #ccc;
+  margin-bottom: 20px;
+}
+
+/* 選択肢ボタンのレイアウト */
+.deposit-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.deposit-options button {
+  padding: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  background: linear-gradient(to bottom, #555, #333);
+  color: white;
+  border: 1px solid #777;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.2s;
+}
+
+.deposit-options button:active {
+  background: #222;
+  transform: scale(0.96);
+}
+
+/* キャンセルボタン */
+.close-modal-btn {
+  padding: 10px 20px;
+  background-color: #d9534f;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.close-modal-btn:active {
+  background-color: #c9302c;
+}
+ @media (max-width: 850px) {
+  /* ゲーム全体のコンテナを画面の一番上から配置する */
+  .game-container {
+    flex-direction: column;
+    justify-content: flex-start; /* 中身を上寄せにする */
+    align-items: center;
+    position: relative;
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
+    padding-top: 0;             /* ★上部の余白を0にして上に詰める */
+    margin-top: 0;              /* ★マージンも0に */
+    box-sizing: border-box;
+  }
+
+  /* マシン（筐体）の画像を上部に配置する設定 */
+  #machine {
+    width: 95%;
+    max-width: 420px;
+    height: auto;
+    margin-top: 30px;           /* ★設定ボタン等と少しだけ被らないようにする隙間（必要に応じて0〜50pxで調整） */
+    z-index: 1;                 /* 背景側に配置 */
+  }
+
+  /* --- 操作パネル全体をまとめる外枠の領域調整 --- */
+  .sidebar-wrapper {
+    position: absolute;
+    bottom: 20px;               
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    background-color: rgba(17, 17, 17, 0.85); 
+    padding: 20px 10px; 
+    border-radius: 12px;
+    border: 1px solid #333;
+    width: 120%;
+    max-width: 420px;           
+    box-sizing: border-box;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+    
+  
+  /* 既存のボタンサイズ等の調整はそのまま維持 */
+  .hand-coins-display { 
+    margin-bottom: 0px; 
+    justify-content: 
+    space-around; }
+  .sidebar-controls { 
+    grid-template-columns: 
+    1fr 1fr 1.2fr; gap: 5px; 
+    padding: 10px 0; 
+  }
+  .sidebar-btn-bet {
+    width: 130%; 
+    height: 50px; 
+    font-size: 11px;
+    margin-top: -15px; 
+    transform: translateX(5px);
+
+  }
+  .btn-single-bet {
+    width: 35px;   /* 好みの大きさに調整してください */
+    height: 35px;
+    border-radius: 50%; /* 正円を維持 */
+  }
+  .btn-reset {
+    width: 22px;   /* 1枚掛けより一回り小さく */
+    height: 22px;
+    border-radius: 50%; /* 正円を維持 */
+  }
+  .sidebar-btn-start {
+    width: 80%; 
+    height: 60px;
+    border-radius: 50%;
+   .sidebar-btn-start:active,
+   .sidebar-btn-start.lever-down {
+    transform: translate(-10px, 10px) !important; 
+    box-shadow: 0 0px 0 #000 !important;
+  }
+  .btn-real-stop {
+    width: 35%; 
+    border-radius: 50%;
+    transform: translateX(-10px);
+  }
+}
