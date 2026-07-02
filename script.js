@@ -1036,8 +1036,8 @@ function checkWin() {
         currentLineWon = true;
         isLineWon = true;
         currentBonusType = FLAGS.BIG;
-        bonusPayoutRemaining = 250;
-        maxBonusPayout = 250;
+        bonusPayoutRemaining = 280;
+        maxBonusPayout = 280;
         bonusTotalPayout = 0;
         isBonusInternal = false;
       }
@@ -1049,8 +1049,8 @@ function checkWin() {
         currentLineWon = true;
         isLineWon = true;
         currentBonusType = FLAGS.REG;
-        bonusPayoutRemaining = 100;
-        maxBonusPayout = 100;
+        bonusPayoutRemaining = 98;
+        maxBonusPayout = 98;
         bonusTotalPayout = 0;
         isBonusInternal = false;
       }
@@ -1242,7 +1242,7 @@ function checkWin() {
         updateDisplay();
       };
 
-      if (endedBonusType === FLAGS.BIG || maxBonusPayout === 250) {
+      if (endedBonusType === FLAGS.BIG || maxBonusPayout === 280) {
         sndBigBonus.pause();
         sndBigBonus.currentTime = 0;
         sndBonusFinish.currentTime = 0;
