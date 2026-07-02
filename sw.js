@@ -1,4 +1,4 @@
-const CACHE_NAME = 'slot-game-cache-v1';
+const CACHE_NAME = 'slot-game-cache-v2';
 // キャッシュするファイルのリスト（使用している画像や音声を全て記載します）
 const urlsToCache = [
   './',
@@ -26,7 +26,7 @@ const urlsToCache = [
   './image/statistics.png',
   './image/statisticsmenu.png',
   './image/icon192.png',
-  './image/icon512.png',
+  './image/icon512.jpg',
   './bgm/9.mp3',
   './bgm/9finish.mp3',
   './bgm/9start.mp3',
