@@ -1092,8 +1092,11 @@ function checkWin() {
     if (currentLineWon) wonLines.push(lineIdx);
   });
 
-  const isLeftcornercherry = (leftTop === 'cherry' || leftBot === 'cherry');
-  if (isLeftcornercherry) {
+  // --- 【修正】角チェリーおよび中段チェリーの両方を判定対象にする ---
+  const isCherryWon = (leftTop === 'cherry' || leftMid === 'cherry' || leftBot === 'cherry');
+  const isLeftcornercherry = (leftTop === 'cherry' || leftBot === 'cherry'); // 単子チェリー等の既存判定用
+
+  if (isCherryWon) {
     const isMinorRoleWon = isGrapeWon || isReplayWon || isBellWon || isClownWon;
     if (!isMinorRoleWon) {
       pay += (bonusPayoutRemaining > 0) ? 14 : 2;
@@ -1101,6 +1104,20 @@ function checkWin() {
       if (centerMid !== 'cherry') {
         isSingleCherry = true;
       }
+
+      // --- 左リールに停止したチェリー図柄を点滅させる処理 ---
+      const tape0 = document.getElementById('reelTape0');
+      const offset = -1;
+      const totalCells = reelStrips[0].length * 3;
+      let cherryOffset = 0;
+
+      if (leftTop === 'cherry') cherryOffset = -1;
+      else if (leftMid === 'cherry') cherryOffset = 0;
+      else if (leftBot === 'cherry') cherryOffset = 1;
+
+      const cellIndex = (Math.round(currentPos[0]) + cherryOffset + offset + totalCells) % totalCells;
+      const img = tape0.children[cellIndex]?.querySelector('img');
+      if (img) img.classList.add('blink-anim');
     }
   }
 
@@ -1122,12 +1139,12 @@ function checkWin() {
       isReachWon = true;
     }
   }
-
-  if (isLeftcornercherry && bonusPayoutRemaining <= 0) {
-    if (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG) {
+   
+  if (isCherryWon && bonusPayoutRemaining <= 0) {
+    if (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG || currentGameFlag === FLAGS.MIDDLE_CHERRY) {
       if (!isBonusInternal) {
         isBonusInternal = true;
-        internalBonusType = (currentGameFlag === FLAGS.CHERRY_BIG) ? FLAGS.BIG : FLAGS.REG;
+        internalBonusType = (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.MIDDLE_CHERRY) ? FLAGS.BIG : FLAGS.REG;
       }
       isReachWon = true;
     }
