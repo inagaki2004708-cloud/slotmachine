@@ -106,12 +106,12 @@
   ];
 
   const PROBABILITY_TABLE = {
-  1: { big: 163, c_big: 45, reg: 100, c_reg: 49, grape: 10881, replay: 8978, cherry: 1840, bell: 64, clown: 64 },
+  1: { big: 163, c_big: 45, reg: 100, c_reg: 49, grape: 10880, replay: 8978, cherry: 1840, bell: 64, clown: 64 },
   2: { big: 164, c_big: 46, reg: 108, c_reg: 53, grape: 10922, replay: 8978, cherry: 1840, bell: 64, clown: 64 },
   3: { big: 164, c_big: 46, reg: 131, c_reg: 61, grape: 10965, replay: 8978, cherry: 1840, bell: 64, clown: 64 },
   4: { big: 168, c_big: 50, reg: 146, c_reg: 62, grape: 11009, replay: 8978, cherry: 1840, bell: 64, clown: 64 },
   5: { big: 168, c_big: 50, reg: 170, c_reg: 87, grape: 11054, replay: 8978, cherry: 1840, bell: 64, clown: 64 },
-  6: { big: 170, c_big: 87, reg: 170, c_reg: 87, grape: 11338, replay: 8978, cherry: 1840, bell: 64, clown: 64 }
+  6: { big: 170, c_big: 87, reg: 170, c_reg: 87, grape: 11340, replay: 8978, cherry: 1840, bell: 64, clown: 64 }
 };
 let isAutoPlay = false;
   let autoPlayTimer = null;
