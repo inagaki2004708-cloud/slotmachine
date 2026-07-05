@@ -1154,15 +1154,7 @@ function checkWin() {
     isReachWon = true;
   }
 
-  // リーチ目が出現していて、まだボーナス内部フラグが立っていない場合の補正処理
-  if (isReachWon && bonusPayoutRemaining <= 0 && !isBonusWon) {
-    if (!isBonusInternal) {
-      isBonusInternal = true;
-      // 意図せずリーチ目が止まった場合、ランダムでBIGかREGを付与 (例: BIG 60%, REG 40%)
-      internalBonusType = Math.random() < 0.6 ? FLAGS.BIG : FLAGS.REG;
-    } 
-  }
-  if (isBonusWon) {
+    if (isBonusWon) {
     displayGameCount = 0;
     gogoLamp.className = 'gogo-lamp'; // ランプの状態クラスをリセット
     isBonusInternal = false;
