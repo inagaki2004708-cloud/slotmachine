@@ -1092,20 +1092,17 @@ function checkWin() {
     if (currentLineWon) wonLines.push(lineIdx);
   });
 
-  // --- 【修正】角チェリーおよび中段チェリーの両方を判定対象にする ---
+   // --- 【修正版】チェリー（角チェリー＆中段チェリー）の判定と払い出し処理 ---
   const isCherryWon = (leftTop === 'cherry' || leftMid === 'cherry' || leftBot === 'cherry');
-  const isLeftcornercherry = (leftTop === 'cherry' || leftBot === 'cherry'); // 単子チェリー等の既存判定用
 
   if (isCherryWon) {
     const isMinorRoleWon = isGrapeWon || isReplayWon || isBellWon || isClownWon;
     if (!isMinorRoleWon) {
+      // ボーナス中は14枚、通常時は2枚の払い出し
       pay += (bonusPayoutRemaining > 0) ? 14 : 2;
       isLineWon = true;
-      if (centerMid !== 'cherry') {
-        isSingleCherry = true;
-      }
 
-      // --- 左リールに停止したチェリー図柄を点滅させる処理 ---
+      // --- 左リールのチェリー図柄を点滅アニメーションさせる ---
       const tape0 = document.getElementById('reelTape0');
       const offset = -1;
       const totalCells = reelStrips[0].length * 3;
@@ -1119,8 +1116,21 @@ function checkWin() {
       const img = tape0.children[cellIndex]?.querySelector('img');
       if (img) img.classList.add('blink-anim');
     }
+
+    // --- 通常時のチェリー重複ボーナス確定処理 ---
+    if (bonusPayoutRemaining <= 0) {
+      // チェリー重複BIG / チェリー重複REG / 中段チェリー のフラグだった場合のみボーナス確定
+      if (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG || currentGameFlag === FLAGS.MIDDLE_CHERRY) {
+        if (!isBonusInternal) {
+          isBonusInternal = true;
+          internalBonusType = (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.MIDDLE_CHERRY) ? FLAGS.BIG : FLAGS.REG;
+        }
+        isReachWon = true;
+      }
+    }
   }
 
+  // 小役ラインの点滅処理
   wonLines.forEach(lineIdx => {
     const indices = lineIndices[lineIdx];
     for (let i = 0; i < 3; i++) {
@@ -1133,22 +1143,6 @@ function checkWin() {
     }
   });
 
-  const isMinorRoleWon = isGrapeWon || isReplayWon || isBellWon || isClownWon;
-  if (isLeftcornercherry && !isMinorRoleWon && bonusPayoutRemaining <= 0) {
-    if (isSingleCherry) {
-      isReachWon = true;
-    }
-  }
-   
-  if (isCherryWon && bonusPayoutRemaining <= 0) {
-    if (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG || currentGameFlag === FLAGS.MIDDLE_CHERRY) {
-      if (!isBonusInternal) {
-        isBonusInternal = true;
-        internalBonusType = (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.MIDDLE_CHERRY) ? FLAGS.BIG : FLAGS.REG;
-      }
-      isReachWon = true;
-    }
-  }
   // 独自定義のリーチ目パターンもリーチ目として扱う
   if (isCustomReachWon) {
     isReachWon = true;
