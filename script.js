@@ -1545,7 +1545,21 @@ function initReelTapes() {
 
       if (symbolName === '7') {
         img.classList.add('glow-seven-img');
+      } else if (symbolName === 'bar') {
+        img.classList.add('bar-img');
+      } else if (symbolName === 'grape') {
+        img.classList.add('grape-img');
+      } else if (symbolName === 'cherry') {
+        img.classList.add('cherry-img');
+      } else if (symbolName === 'bell') {
+        img.classList.add('bell-img');
+      } else if (symbolName === 'replay') {
+        img.classList.add('replay-img');
+      } else if (symbolName === 'clown') {
+        img.classList.add('clown-img');
       }
+      
+      cell.appendChild(img);
       
       cell.appendChild(img);
       tape.appendChild(cell);
