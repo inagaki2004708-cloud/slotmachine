@@ -1116,8 +1116,8 @@ img {
   width: 35px;              /* 幅 */
   height: 20px;            /* 高さ */
   
-  background-color: transparent !important; 
-  border: none !important;               
+  background-color: rgba(255, 0, 0, 0.6) !important; 
+  border: 3px solid yellow !important;               
   
   z-index: 9999 !important; 
   cursor: pointer;

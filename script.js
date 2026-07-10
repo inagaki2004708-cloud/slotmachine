@@ -1808,3 +1808,27 @@ function insertCoinManually() {
 
 // グローバルから呼び出せるように登録
 window.insertCoinManually = insertCoinManually;
+// 画面の初回タップ時にすべての音声を一斉にアンロックする処理
+let isAudioUnlockedGlobal = false;
+
+function unlockAudioGlobal() {
+  if (isAudioUnlockedGlobal) return;
+  
+  // 既存のHTML5 Audioアンロック関数を呼び出し
+  unlockAudio();
+  
+  // Web Audio API (ペカり音など) がサスペンド状態なら復帰させる
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  
+  isAudioUnlockedGlobal = true;
+  
+  // 一度アンロックしたら不要になるためイベントリスナーを削除
+  document.removeEventListener('touchstart', unlockAudioGlobal);
+  document.removeEventListener('click', unlockAudioGlobal);
+}
+
+// 画面のどこかをタッチまたはクリックした時に実行
+document.addEventListener('touchstart', unlockAudioGlobal, { once: true });
+document.addEventListener('click', unlockAudioGlobal, { once: true });
