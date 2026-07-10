@@ -1116,9 +1116,10 @@ img {
   width: 35px;              /* 幅 */
   height: 20px;            /* 高さ */
   
-  background-color: rgba(255, 0, 0, 0.6) !important; 
-  border: 3px solid yellow !important;               
-  
-  z-index: 9999 !important; 
+ background: rgba(255, 0, 0, 0); /* 完全に透明 */
+  border: none;
   cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none; 
 }
