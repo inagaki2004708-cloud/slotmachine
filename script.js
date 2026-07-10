@@ -393,15 +393,12 @@ function drawSlumpGraph() {
     };
 
     // ▼▼ 修正箇所：ボーナス中と通常時で処理を完全に分ける ▼▼
+    // ▼▼ 修正箇所：ボーナス中と通常時で処理を完全に分ける ▼▼
     if (bonusPayoutRemaining > 0) { 
-      const rand = Math.floor(Math.random() * 65536);
-      if (rand < BONUS_PROBABILITY_TABLE.grape) {
-        currentGameFlag = FLAGS.GRAPE;
-      } else {
-        currentGameFlag = FLAGS.CHERRY;
-      }
-    } else {
-      // ーーー ここから下はすべてボーナス中以外（通常時）のみ実行 ーーー
+      // ボーナス中は取りこぼしを防ぐため、常にブドウフラグをベースとし、
+      // リール制御側でチェリーも許可する「共通フラグ」の形にします。
+      currentGameFlag = FLAGS.GRAPE;
+    } else {      // ーーー ここから下はすべてボーナス中以外（通常時）のみ実行 ーーー
       
       // ▼ ジャグ連（強制ボーナス）の判定 ▼
       if (isForcedRenchan && gameCount === nextBonusGameCount) {
@@ -711,6 +708,11 @@ function drawSlumpGraph() {
           // ボーナス内部成立時は7テンパイを意識
           if (isBonus && currentLine[0] === '7' && currentLine[1] === '7') isBonusTenpai = true;
         }
+
+        // ▼ 追加：第1停止時（図柄が1つだけの状態）でもターゲット図柄を有効ラインに引き込む
+        if (currentLine.length === 1 && targetSym && currentLine[0] === targetSym) {
+          hasTargetSmallRole = true;
+        }
       });
 
       // --- ③ チェリー固有の制御 ---
@@ -718,7 +720,13 @@ function drawSlumpGraph() {
         const hasCherry = testReel.includes('cherry');
         const isMiddleCherry = testReel[1] === 'cherry';
         
-        if (currentGameFlag === FLAGS.CHERRY || currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG) {
+        // ▼ ボーナス中はチェリーの引き込みを許可（ぶどうとの共通フラグとして扱う）
+        if (bonusPayoutRemaining > 0) {
+          if (hasCherry && !isMiddleCherry) hasTargetSmallRole = true; 
+          if (isMiddleCherry) hasUnauthorizedWin = true; 
+        }
+        // ▼ 通常時の処理
+        else if (currentGameFlag === FLAGS.CHERRY || currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG) {
           if (hasCherry && !isMiddleCherry) hasTargetSmallRole = true; 
           if (isMiddleCherry) hasUnauthorizedWin = true;         
         } else if (currentGameFlag === FLAGS.MIDDLE_CHERRY) {
@@ -728,14 +736,7 @@ function drawSlumpGraph() {
           if (hasCherry && !isBonus) hasUnauthorizedWin = true; 
         }
       }
-           else if (reelIndex === 1) {
-        if (bonusPayoutRemaining > 0 && currentGameFlag === FLAGS.CHERRY) {
-          if (testReel.includes('cherry')) {
-            hasUnauthorizedWin = true;
-          }
-        }
-      }
-      // --- ④ 代役（リーチ目）の判定 ---
+      // ※ 中リール(reelIndex === 1)の不要なペナルティ処理は削除しました      // --- ④ 代役（リーチ目）の判定 ---
       if (isBonus && !hasBonusWin && !isBonusTenpai) {
         if (testReel.includes('cherry') || testReel.includes('clown') || testReel.includes('bar')) {
           hasSubstitute = true;
