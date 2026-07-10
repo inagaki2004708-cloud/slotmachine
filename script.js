@@ -1,4 +1,5 @@
 // ゲーム状態管理変数
+  let activeBet = 3;
   let credits = 0;
   let handCoins = 0;
   let gameCount = 0;
@@ -148,9 +149,8 @@ let isAutoPlay = false;
       case STATES.IDLE: // 通常待機中
         btnBet.disabled = false;
         // ペカっている状態 or ボーナス中のみ1枚掛け有効
-        if (gogoLamp.classList.contains('on') || bonusPayoutRemaining > 0) {
-          btnSingleBet.disabled = false;
-        }
+                  btnSingleBet.disabled = false;
+        
         indInsertMedals.classList.add('on');
         indStart.classList.remove('on');
         break;
@@ -380,7 +380,7 @@ function drawSlumpGraph() {
     lastStartTime = Date.now();
 
     document.querySelectorAll('.blink-anim').forEach(img => img.classList.remove('blink-anim'));
-
+    activeBet = betAmount;
     const currentBet = betAmount;
     betAmount = 0;
     indReplay.classList.remove('on');
@@ -620,9 +620,14 @@ function drawSlumpGraph() {
     const isThirdStop = (stopCount === 2);
         
     // 有効な5ラインのインデックス定義
-    const LINES = [
-      [0, 0, 0], [1, 1, 1], [2, 2, 2], [0, 1, 2], [2, 1, 0]
-    ];
+    let LINES = [];
+if (activeBet === 1) {
+  LINES = [ [1, 1, 1] ]; // 中段のみ
+} else if (activeBet === 2) {
+  LINES = [ [0, 0, 0], [1, 1, 1], [2, 2, 2] ]; // 上・中・下段のみ
+} else {
+  LINES = [ [0, 0, 0], [1, 1, 1], [2, 2, 2], [0, 1, 2], [2, 1, 0] ]; // 全5ライン
+}
 
     // すでに停止しているリールの状態を取得
     const board = [null, null, null];
@@ -996,6 +1001,10 @@ function checkWin() {
     [leftTop, centerMid, rightBot],
     [leftBot, centerMid, rightTop]
   ];
+   let activeLineIndices = [];
+if (activeBet === 1) activeLineIndices = [1];
+else if (activeBet === 2) activeLineIndices = [0, 1, 2];
+else activeLineIndices = [0, 1, 2, 3, 4];
 
   const lineIndices = [
     [0, 0, 0], 
@@ -1019,6 +1028,7 @@ function checkWin() {
 
   // 各有効ラインの図柄判定
   lines.forEach((line, lineIdx) => {
+    if (!activeLineIndices.includes(lineIdx)) return;
     const [s1, s2, s3] = line;
     let currentLineWon = false;
     
@@ -1056,7 +1066,12 @@ function checkWin() {
         isBonusInternal = false;
       }
     } else if (s1 === 'grape' && s2 === 'grape' && s3 === 'grape') {
-      pay += (bonusPayoutRemaining > 0) ? 14 : 7;
+      // ボーナス中か通常時かで払い出しを分ける
+      if (bonusPayoutRemaining > 0) {
+        pay += (activeBet === 1) ? 8 : 14; // ボーナス中は1枚掛けで8枚、2枚掛けで14枚
+      } else {
+        pay += (activeBet === 2) ? 14 : 7; // 通常時の処理
+      }
       isGrapeWon = true;
       currentLineWon = true;
       isLineWon = true;
@@ -1094,15 +1109,19 @@ function checkWin() {
   });
 
    // --- 【修正版】チェリー（角チェリー＆中段チェリー）の判定と払い出し処理 ---
-  const isCherryWon = (leftTop === 'cherry' || leftMid === 'cherry' || leftBot === 'cherry');
-
-  if (isCherryWon) {
+  let isCherryWon = false;
+if (activeBet === 1 && leftMid === 'cherry') isCherryWon = true; // 1枚掛けは中段のみ
+if (activeBet >= 2 && (leftTop === 'cherry' || leftMid === 'cherry' || leftBot === 'cherry')) isCherryWon = true; // 2枚掛け以上は角も有効
+   if (isCherryWon) {
     const isMinorRoleWon = isGrapeWon || isReplayWon || isBellWon || isClownWon;
     if (!isMinorRoleWon) {
-      // ボーナス中は14枚、通常時は2枚の払い出し
-      pay += (bonusPayoutRemaining > 0) ? 14 : 2;
+      // ボーナス中は1枚掛けで8枚、2枚掛け以上で14枚。通常時は2枚の払い出し
+      if (bonusPayoutRemaining > 0) {
+        pay += (activeBet === 1) ? 8 : 14; 
+      } else {
+        pay += 2;
+      }
       isLineWon = true;
-
       // --- 左リールのチェリー図柄を点滅アニメーションさせる ---
       const tape0 = document.getElementById('reelTape0');
       const offset = -1;
@@ -1397,7 +1416,7 @@ function updateBetLamps(amount) {
 
   function betSingle() {
     if (isAutoPlay && !isAutoSystemCalling) return;
-    if (!gogoLamp.classList.contains('on') && !isBonusInternal && bonusPayoutRemaining <= 0) return; 
+     
     unlockAudio();
     
     if (bonusPayoutRemaining <= 0 && !isBonusEnding) {
@@ -1752,4 +1771,40 @@ function autoAim(reelIndex, targetSymbol) {
   }
   return false;
 }
+// 手動でメダルを投入する処理（クリック用）
+function insertCoinManually() {
+  if (handCoins <= 0) return; // 手持ちメダルがない場合は何もしない
+  if (currentState !== STATES.IDLE && currentState !== STATES.BET) return; // 回転中などは無効
+  if (isAutoPlay && !isAutoSystemCalling) return;
 
+  unlockAudio();
+
+  if (bonusPayoutRemaining <= 0 && !isBonusEnding) {
+    bonusTotalPayout = 0;
+  }
+
+  // ボーナス中は最大2枚、通常時は最大3枚
+  const maxBet = (bonusPayoutRemaining > 0) ? 2 : 3;
+
+  if (betAmount < maxBet) {
+    // 1. ベットが上限に達していない場合は直接ベットする
+    handCoins--;
+    betAmount++;
+    currentDiff--;
+    updateBetLamps(betAmount);
+    changeState(STATES.BET);
+    sndMaxBet.currentTime = 0;
+    sndMaxBet.play(); // ※チャリンという音があればそれに変更してもOK
+  } else if (credits < 50) {
+    // 2. ベットが満タンでクレジットに空きがある場合はクレジットに入れる
+    handCoins--;
+    credits++;
+    sndMaxBet.currentTime = 0;
+    sndMaxBet.play();
+  }
+
+  updateDisplay();
+}
+
+// グローバルから呼び出せるように登録
+window.insertCoinManually = insertCoinManually;

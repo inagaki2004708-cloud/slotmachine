@@ -122,24 +122,27 @@
 <div class="game-container">
   
   <div id="machine">
+    <div id="creditDisplay" class="seg-item">50</div>
+    <div id="countDisplay" class="seg-item"></div>
+    <div id="payoutDisplay" class="seg-item">0</div>
+
+    <div id="coinSlotZone" onclick="insertCoinManually()"></div>
     
     <div class="reels-window">
-    <div class="reel" id="reel0">
-      <div class="reel-tape" id="reelTape0"></div>
+      <div class="reel" id="reel0">
+        <div class="reel-tape" id="reelTape0"></div>
+      </div>
+      <div class="reel" id="reel1">
+        <div class="reel-tape" id="reelTape1"></div>
+      </div>
+      <div class="reel" id="reel2">
+        <div class="reel-tape" id="reelTape2"></div>
+      </div>
     </div>
-    <div class="reel" id="reel1">
-      <div class="reel-tape" id="reelTape1"></div>
-    </div>
-    <div class="reel" id="reel2">
-      <div class="reel-tape" id="reelTape2"></div>
-    </div>
-  </div>
 
-    <div id="creditDisplay" class="seg-item">50</div>
-<div id="countDisplay" class="seg-item"></div>
-<div id="payoutDisplay" class="seg-item">0</div>
+    <!-- 重複部分を削除しました -->
+
     <div id="gogoLamp"></div>
-
     <div class="bet-lamps-area">
         <div id="betLamp3" class="bet-lamp"></div>
         <div id="betLamp2" class="bet-lamp"></div>
