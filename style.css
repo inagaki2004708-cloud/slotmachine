@@ -1059,7 +1059,7 @@ img {
     padding: 10px 0; 
   }
   .sidebar-btn-bet {
-    width: 130%; 
+    width: 100%; 
     height: 50px; 
     font-size: 11px;
     margin-top: -15px; 
@@ -1077,9 +1077,10 @@ img {
     border-radius: 50%; /* 正円を維持 */
   }
   .sidebar-btn-start {
-    width: 80%; 
+    width: 60%; 
     height: 60px;
     border-radius: 50%;
+    transform: translateX(-10px);
   } /* ← ★前回抜けていた閉じカッコをここに追加しました */
 
   .sidebar-btn-start:active,
@@ -1089,11 +1090,13 @@ img {
   }
 
   .btn-real-stop {
-    width: 35%; 
+    width: 55px;          /* 希望の幅 */
+    height: 55px;         /* 幅と同じにする */
+    min-width: 55px;      /* ★追加：これ以上小さくさせない絶対指定 */
+    flex-shrink: 0;       /* ★追加：Flexboxによる自動縮小を無効化 */
     border-radius: 50%;
     transform: translateX(-10px);
   }
-
   
 } /* ← ★スマホ画面用の設定（@media）をここでしっかり終わらせます */
 
