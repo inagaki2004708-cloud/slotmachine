@@ -473,16 +473,33 @@ function drawSlumpGraph() {
     
     currentFlag = (currentGameFlag === FLAGS.BIG || currentGameFlag === FLAGS.REG) ? 5 : 0;
     
-    if ((currentFlag === 5 || isBonusInternal) && !gogoLamp.classList.contains('on') && !gogoLamp.classList.contains('rainbow')) {
+    // ランプが未点灯の時のみ判定
+    if ((currentFlag === 5 || isBonusInternal) && 
+        !gogoLamp.classList.contains('on') && 
+        !gogoLamp.classList.contains('rainbow') &&
+        !gogoLamp.classList.contains('premium-only-gogo') &&
+        !gogoLamp.classList.contains('premium-only-chance')) {
+      
+      // 先告知の発生確率（25%）
       if (Math.random() < 0.25) { 
-        if (internalBonusType === FLAGS.BIG && Math.random() < 0.1) {
-          gogoLamp.classList.add('rainbow');
+        if (internalBonusType === FLAGS.BIG) {
+          // BIG確定時のプレミア振り分け (例: 各5%の確率でプレミア選択)
+          const premiumRand = Math.random();
+          if (premiumRand < 0.05) {
+            gogoLamp.classList.add('rainbow');
+          } else if (premiumRand < 0.10) {
+            gogoLamp.classList.add('premium-only-gogo');
+          } else if (premiumRand < 0.15) {
+            gogoLamp.classList.add('premium-only-chance');
+          } else {
+            gogoLamp.classList.add('on'); // 通常点灯
+          }
         } else {
+          // REGの場合は必ず通常点灯
           gogoLamp.classList.add('on');
         }
       }
     }
-
     gameCount++;
     if (bonusPayoutRemaining <= 0 && !isBonusEnding) {
       displayGameCount++;
@@ -1186,12 +1203,63 @@ if (activeBet >= 2 && (leftTop === 'cherry' || leftMid === 'cherry' || leftBot =
     isReachWon = true;
   }
 
-    if (isBonusWon) {
+     if (isBonusWon) {
+    // ▼ 追加: ボーナスが揃ったゲーム数とレインボー状態を保持
+    const wonGameCount = displayGameCount; 
+    const isRainbow = gogoLamp.classList.contains('rainbow'); 
+
     displayGameCount = 0;
     gogoLamp.className = 'gogo-lamp'; // ランプの状態クラスをリセット
     isBonusInternal = false;
 
     if (currentBonusType === FLAGS.BIG) {
+      // ▼▼ 追加：プレミアムBGMの条件判定とsrc書き換え ▼▼
+      let startBgm = 'bgm/startbonus.mp3';
+      let bigBgm = 'bgm/bigbonus.mp3';
+      let finishBgm = 'bgm/bonusfinish.mp3';
+
+      // ① CHANCEレインボー点灯時
+      if (isRainbow) {
+        // 【パターンA: Will】 にする場合はこちらを有効にしてください
+        /*
+        startBgm = 'bgm/willstart.mp3';
+        bigBgm = 'bgm/will.mp3';
+        finishBgm = 'bgm/willfinish.mp3';
+        */
+
+        // 【パターンB: Revo】 にする場合はこちらを有効にしてください（デフォルト）
+        // ※revo.mp3 は280枚払い出しまでループ再生され、終了音は鳴らしません
+        startBgm = 'bgm/revostart.mp3';
+        bigBgm = 'bgm/revo.mp3';
+        finishBgm = null; 
+      } 
+      // ② ボーナス後1ゲームで当選 (1G連)
+      else if (wonGameCount === 1) {
+        startBgm = 'bgm/sp1start.mp3';
+        bigBgm = 'bgm/spacial1.mp3';
+        finishBgm = 'bgm/sp1finish.mp3';
+      } 
+      // ③ ボーナス終了後2G～5G以内に当選
+      else if (wonGameCount >= 2 && wonGameCount <= 5) {
+        startBgm = 'bgm/9start.mp3';
+        bigBgm = 'bgm/9.mp3';
+        finishBgm = 'bgm/9finish.mp3';
+      } 
+      // ④ 100G以内のゾロ目G数で当選 (11, 22, 33... 99)
+      else if (wonGameCount > 0 && wonGameCount <= 99 && wonGameCount % 11 === 0) {
+        startBgm = 'bgm/dstart.mp3';
+        bigBgm = 'bgm/d.mp3';
+        finishBgm = 'bgm/dfinish.mp3';
+      }
+
+      // 判定した音声を実際のAudioオブジェクトにセット
+      sndStartBonus.src = startBgm;
+      sndBigBonus.src = bigBgm;
+      if (finishBgm) {
+        sndBonusFinish.src = finishBgm;
+      } else {
+        sndBonusFinish.removeAttribute('src');       }
+
       // ▼ BIGの場合: ファンファーレ再生後、終了を検知してBIG BGMを再生
       sndStartBonus.currentTime = 0;
       const playPromise = sndStartBonus.play();
@@ -1230,9 +1298,21 @@ if (activeBet >= 2 && (leftTop === 'cherry' || leftMid === 'cherry' || leftBot =
     !gogoLamp.classList.contains('premium-only-chance')
   ) {
     playFlashZeroLatency();
-    if (internalBonusType === FLAGS.BIG && Math.random() < 0.1) {
-      gogoLamp.classList.add('rainbow');
+    
+    if (internalBonusType === FLAGS.BIG) {
+      // BIG確定時のプレミア振り分け (先告知と同じ確率設定)
+      const premiumRand = Math.random();
+      if (premiumRand < 0.05) {
+        gogoLamp.classList.add('rainbow');
+      } else if (premiumRand < 0.10) {
+        gogoLamp.classList.add('premium-only-gogo');
+      } else if (premiumRand < 0.15) {
+        gogoLamp.classList.add('premium-only-chance');
+      } else {
+        gogoLamp.classList.add('on'); // 通常点灯
+      }
     } else {
+      // REGの場合は必ず通常点灯
       gogoLamp.classList.add('on');
     }
   }
@@ -1274,37 +1354,36 @@ if (activeBet >= 2 && (leftTop === 'cherry' || leftMid === 'cherry' || leftBot =
       }
 
       const safeEndState = () => {
-        sndBigBonus.pause();
-        sndBigBonus.currentTime = 0;
-        sndRegBonus.pause();
-        sndRegBonus.currentTime = 0;
-        changeState(STATES.IDLE);
-        updateBetLamps(0);
-        updateDisplay();
-      };
+            sndBigBonus.pause();
+            sndBigBonus.currentTime = 0;
+            sndRegBonus.pause();
+            sndRegBonus.currentTime = 0;
+            changeState(STATES.IDLE);
+            updateBetLamps(0);
+            updateDisplay();
+          };
 
-      if (endedBonusType === FLAGS.BIG || maxBonusPayout === 280) {
-        sndBigBonus.pause();
-        sndBigBonus.currentTime = 0;
-        sndBonusFinish.currentTime = 0;
-        
-        const playBonusFinish = () => {
-          const playPromise = sndBonusFinish.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(error => {
-              console.warn("終了音の再生がスキップされました。", error);
+          if (endedBonusType === FLAGS.BIG) {
+            if (sndBonusFinish.getAttribute('src')) {
+              sndBonusFinish.currentTime = 0;
+              const playPromise = sndBonusFinish.play();
+              if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                  safeEndState();
+                });
+              }
+              sndBonusFinish.onended = safeEndState;
+              setTimeout(safeEndState, 4000);
+            } else {
               safeEndState();
-            });
+            }
+          } else {
+            safeEndState();
           }
-          sndBonusFinish.onended = safeEndState;
-          setTimeout(safeEndState, 4000);
-        };
-        playBonusFinish();
-      } else {
-        safeEndState();
-      }
-    }
-  };
+        }
+      };
+    
+  
 
   if (pay > 0) {
     let animPay = pay;
@@ -1350,7 +1429,7 @@ if (activeBet >= 2 && (leftTop === 'cherry' || leftMid === 'cherry' || leftBot =
   } else {
     finalizeCheckWin();
   }
-}
+ }
   
   
     
