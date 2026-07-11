@@ -1123,3 +1123,47 @@ img {
   -webkit-tap-highlight-color: transparent;
   touch-action: none; 
 }
+/* ▼▼ 機体上ボタンの配置 ▼▼ */
+.machine-btn-start {
+  position: absolute;
+  top: 53%;
+  left: 21%;
+  width: 7%;
+  height: 5%;
+  background: rgba(0, 0, 0, 0); 
+  border: none;
+  cursor: pointer;
+  z-index: 20;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.machine-btn-single {
+  position: absolute;
+  top: 53%;
+  left: 6%;
+  width: 6%;
+  height: 5%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0); 
+  border: none;
+  cursor: pointer;
+  z-index: 20;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.machine-btn-reset {
+  position: absolute;
+  top: 53%;
+  left: 14%;
+  width: 6%;
+  height: 5%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0); 
+  border: none;
+  cursor: pointer;
+  z-index: 20;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}

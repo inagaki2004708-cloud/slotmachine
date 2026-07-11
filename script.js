@@ -128,28 +128,37 @@ let isAutoPlay = false;
   let slumpData = [{ game: 0, diff: 0 }]; 
   let lastGraphUpdateGame = 0;
 
-   function changeState(newState) {
+    function changeState(newState) {
     currentState = newState;
     
     const btnBet = document.getElementById('btnBet');
     const btnSingleBet = document.getElementById('btnSingleBet');
     const btnStart = document.getElementById('btnStart');
+    const machineSingleBtn = document.getElementById('machineSingleBtn');
+    const machineStartBtn = document.getElementById('machineStartBtn');
+    const machineResetBtn = document.getElementById('machineResetBtn'); 
     const stopButtons = [
       document.getElementById('btnStop0'), document.getElementById('btnStop1'), document.getElementById('btnStop2'),
       document.getElementById('panelStop0'), document.getElementById('panelStop1'), document.getElementById('panelStop2')
     ];
 
-    // 全ボタンを一旦リセット
+    // 全ボタンを一旦リセット（押せなくする）
     btnBet.disabled = true;
     btnSingleBet.disabled = true;
+    machineSingleBtn.disabled = true; 
     btnStart.disabled = true;
+    machineStartBtn.disabled = true;
+    if (machineResetBtn) machineResetBtn.disabled = true;
     stopButtons.forEach(b => b.disabled = true);
 
     switch (currentState) {
       case STATES.IDLE: // 通常待機中
         btnBet.disabled = false;
-        // ペカっている状態 or ボーナス中のみ1枚掛け有効
-                  btnSingleBet.disabled = false;
+        btnSingleBet.disabled = false;
+        
+        // ▼▼ 追加箇所：待機中は機体の1枚掛けとリセットを有効化 ▼▼
+        machineSingleBtn.disabled = false; 
+        if (machineResetBtn) machineResetBtn.disabled = false; 
         
         indInsertMedals.classList.add('on');
         indStart.classList.remove('on');
@@ -157,14 +166,21 @@ let isAutoPlay = false;
 
       case STATES.BET: // BET後
         btnStart.disabled = false;
+        machineStartBtn.disabled = false;
+        
+        // ▼▼ 追加箇所：BET後も取り消しできるようにリセットを有効化 ▼▼
+        if (machineResetBtn) machineResetBtn.disabled = false; 
+
         indInsertMedals.classList.remove('on');
         indStart.classList.add('on');
         break;
+
       case STATES.SPIN: // 回転中
         stopButtons.forEach(b => b.disabled = false);
         indInsertMedals.classList.remove('on');
         indStart.classList.remove('on');
         break;
+
       case STATES.STOPPING: // 停止操作中
         for (let i = 0; i < 3; i++) {
           if (isSpinning[i]) {
@@ -173,10 +189,11 @@ let isAutoPlay = false;
           }
         }
         break;
+
       case STATES.PAYOUT: // 払い出し中・処理中
         break;
     }
-  } 
+  }
 // ▼▼ 入金モーダル関連の処理 ▼▼
 
 // 入金画面を開く
@@ -220,6 +237,7 @@ function processDeposit(price, coinsToAdd) {
     return;
   }
     const btnStart = document.getElementById('btnStart');
+if (btnStart) {
   btnStart.classList.add('lever-down');
   setTimeout(() => btnStart.classList.remove('lever-down'), 100);
     if (isAutoPlay && !isAutoSystemCalling) return;
@@ -242,7 +260,7 @@ function processDeposit(price, coinsToAdd) {
       executeSpin();
     }
   }
- 
+}
   function updateStatisticsDisplay() {
     const totalBonus = bbCount + rbCount;
     const totalProb = totalBonus > 0 ? Math.round(gameCount / totalBonus) : 0;
@@ -1338,23 +1356,19 @@ if (activeBet >= 2 && (leftTop === 'cherry' || leftMid === 'cherry' || leftBot =
     
   function resetBet() {
     if (isAutoPlay && !isAutoSystemCalling) return;
+    // BETされている場合のみクレジットに戻す
     if (betAmount > 0) {
       credits += betAmount; 
       if (credits > 50) {
-        handCoins += (credits - 50);
+        handCoins += (credits - 50); // 50枚を超えた分だけ所持枚数へ
         credits = 50;
       }
       betAmount = 0;       
       updateDisplay();     
       updateBetLamps(0);  
       changeState(STATES.IDLE); 
-    } else if (credits > 0) {
-      handCoins += credits;
-      credits = 0;
-      updateDisplay();
     }
   }
-
 function updateBetLamps(amount) {
   const b1 = document.getElementById('betLamp1');
   const b2 = document.getElementById('betLamp2');
