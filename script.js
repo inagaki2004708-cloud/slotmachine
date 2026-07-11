@@ -411,13 +411,17 @@ function drawSlumpGraph() {
     };
 
     // ▼▼ 修正箇所：ボーナス中と通常時で処理を完全に分ける ▼▼
-    // ▼▼ 修正箇所：ボーナス中と通常時で処理を完全に分ける ▼▼
     if (bonusPayoutRemaining > 0) { 
-      // ボーナス中は取りこぼしを防ぐため、常にブドウフラグをベースとし、
-      // リール制御側でチェリーも許可する「共通フラグ」の形にします。
-      currentGameFlag = FLAGS.GRAPE;
-    } else {      // ーーー ここから下はすべてボーナス中以外（通常時）のみ実行 ーーー
-      
+      // ボーナス中の抽選（ぶどうとチェリーを別々に抽選）
+      const randBonus = Math.floor(Math.random() * 65536);
+      if (randBonus < 2000) { 
+        // 2000/65536 = 約1/32 の確率でチェリー
+        currentGameFlag = FLAGS.CHERRY;
+      } else {
+        // 残りはすべてぶどう
+        currentGameFlag = FLAGS.GRAPE;
+      }
+    } else {      // ーーー ここから下はすべてボーナス中以外（通常時）のみ実行 ーーー      
       // ▼ ジャグ連（強制ボーナス）の判定 ▼
       if (isForcedRenchan && gameCount === nextBonusGameCount) {
         currentGameFlag = Math.random() < 0.6 ? FLAGS.BIG : FLAGS.REG;
@@ -760,19 +764,15 @@ if (activeBet === 1) {
         const hasCherry = testReel.includes('cherry');
         const isMiddleCherry = testReel[1] === 'cherry';
         
-        // ▼ ボーナス中はチェリーの引き込みを許可（ぶどうとの共通フラグとして扱う）
-        if (bonusPayoutRemaining > 0) {
-          if (hasCherry && !isMiddleCherry) hasTargetSmallRole = true; 
-          if (isMiddleCherry) hasUnauthorizedWin = true; 
-        }
-        // ▼ 通常時の処理
-        else if (currentGameFlag === FLAGS.CHERRY || currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG) {
+        // ▼ ボーナス中・通常時共通：チェリーフラグ時のみ引き込みを許可する
+        if (currentGameFlag === FLAGS.CHERRY || currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG) {
           if (hasCherry && !isMiddleCherry) hasTargetSmallRole = true; 
           if (isMiddleCherry) hasUnauthorizedWin = true;         
         } else if (currentGameFlag === FLAGS.MIDDLE_CHERRY) {
           if (isMiddleCherry) hasTargetSmallRole = true;
           if (hasCherry && !isMiddleCherry) hasUnauthorizedWin = true;
         } else {
+          // チェリーフラグ以外ではチェリーを引き込まない（滑って回避させる）
           if (hasCherry && !isBonus) hasUnauthorizedWin = true; 
         }
       }
