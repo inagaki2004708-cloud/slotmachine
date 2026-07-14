@@ -819,12 +819,13 @@ if (activeBet === 1) {
         if (isLeftCherry) {
           const hasCherryInTest = testReel.includes('cherry');
           
-          if (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG) {
-            // ボーナス重複時は【単チェリー】を作りたいので、チェリーを引き込まない（ペナルティ）
+          // ▼ 修正：ボーナス中のチェリー (bonusPayoutRemaining > 0) も単チェリー扱いにする
+          if (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG || (currentGameFlag === FLAGS.CHERRY && bonusPayoutRemaining > 0)) {
+            // ボーナス重複時、またはボーナス中のチェリーは【単チェリー】を作りたいので、チェリーを引き込まない（ペナルティ）
             if (hasCherryInTest) hasUnauthorizedWin = true; 
             else hasSubstitute = true; 
           } else if (currentGameFlag === FLAGS.CHERRY) {
-            // 通常のチェリー時は【連チェリー】を作りたいので、チェリーを積極的に引き込む
+            // 通常時のチェリーは【連チェリー】を作りたいので、チェリーを積極的に引き込む
             if (hasCherryInTest) hasTargetSmallRole = true;
           }
         }
@@ -1422,11 +1423,13 @@ else activeLineIndices = [0, 1, 2, 3, 4];
         rbCount++;
       }
 
+      // ▼ 追加：終了音を鳴らす前に、再生中のボーナスループBGMを直ちにカット（停止）する
+      sndBigBonus.pause();
+      sndBigBonus.currentTime = 0;
+      sndRegBonus.pause();
+      sndRegBonus.currentTime = 0;
+
       const safeEndState = () => {
-            sndBigBonus.pause();
-            sndBigBonus.currentTime = 0;
-            sndRegBonus.pause();
-            sndRegBonus.currentTime = 0;
             changeState(STATES.IDLE);
             updateBetLamps(0);
             updateDisplay();
