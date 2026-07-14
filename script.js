@@ -565,24 +565,9 @@ function drawSlumpGraph() {
     document.getElementById('statOverlay').style.display = 'none';
   }
   function executeSpin() {
-    lastStartTime = Date.now();
-
-    document.querySelectorAll('.blink-anim').forEach(img => img.classList.remove('blink-anim'));
-    activeBet = betAmount;
-    const currentBet = betAmount;
-    betAmount = 0;
-    indReplay.classList.remove('on');
-    isStopAnimFinished = false;
-    document.querySelector('.reels-window').classList.add('spinning');
-    
-    const BONUS_PROBABILITY_TABLE = {
-      grape: 58000, 
-      cherry: 7536  
-    };
-
-    function executeSpin() {
   lastStartTime = Date.now();
 
+  // 画面効果や状態のリセット
   document.querySelectorAll('.blink-anim').forEach(img => img.classList.remove('blink-anim'));
   activeBet = betAmount;
   betAmount = 0;
@@ -609,83 +594,73 @@ function drawSlumpGraph() {
   updateDisplay();
   changeState(STATES.SPIN);
   
-  isLotteryDone = false; // 次ゲームのために抽選フラグをリセット
+  // ★ ここが超重要：次ゲームのために抽選完了フラグをリセットする
+  isLotteryDone = false; 
 
   // ==========================================
   // ▼ プレミアム演出（無音・遅れ）の抽選と再生 ▼
-  // (これ以降の isSilent... などの記述はそのまま残してください)
-    }
-    gameCount++;
-    if (bonusPayoutRemaining <= 0 && !isBonusEnding) {
-      displayGameCount++;
-    }
-    updateDisplay();
-    changeState(STATES.SPIN);
+  // ==========================================
+  let isSilent = false;
+  let isDelay = false;
 
-    // ==========================================
-    // ▼▼ プレミアム演出（無音・遅れ）の抽選と再生 ▼▼
-    // ==========================================
-    let isSilent = false;
-    let isDelay = false;
+  // ① 無音判定：BIGフラグ成立時（または内部BIG中）の 5% で発生
+  const isBigFlag = (currentGameFlag === FLAGS.BIG || currentGameFlag === FLAGS.CHERRY_BIG || (isBonusInternal && internalBonusType === FLAGS.BIG));
+  if (isBigFlag && Math.random() < 0.05) {
+    isSilent = true;
+  } 
+  // ② 遅れ判定：チェリーフラグ時、またはボーナス成立時の 5% で発生
+  else if ((currentGameFlag === FLAGS.CHERRY || isBonusInternal) && Math.random() < 0.05) {
+    isDelay = true;
+  }
 
-    // ① 無音判定：BIGフラグ成立時（または内部BIG中）の 5% で発生
-    const isBigFlag = (currentGameFlag === FLAGS.BIG || currentGameFlag === FLAGS.CHERRY_BIG || (isBonusInternal && internalBonusType === FLAGS.BIG));
-    if (isBigFlag && Math.random() < 0.05) {
-      isSilent = true;
-    } 
-    // ② 遅れ判定：チェリーフラグ時、またはボーナス成立時の 5% で発生
-    else if ((currentGameFlag === FLAGS.CHERRY || isBonusInternal) && Math.random() < 0.05) {
-      isDelay = true;
-    }
-
-    if (isSilent) {
-      // プレミアム【無音】：スタート音を鳴らさない（BIG確定）
-      console.log("プレミアム演出：無音！(BIG確定)");
-    } else if (isDelay) {
-      // プレミアム【遅れ】：0.3秒遅れてスタート音を鳴らす
-      console.log("プレミアム演出：遅れ！(チェリー or ボーナス)");
-      setTimeout(() => {
-        sndStart.currentTime = 0;
-        sndStart.play();
-      }, 300);
-    } else {
-      // 【通常】
+  if (isSilent) {
+    // プレミアム【無音】：スタート音を鳴らさない（BIG確定）
+    console.log("プレミアム演出：無音！(BIG確定)");
+  } else if (isDelay) {
+    // プレミアム【遅れ】：0.3秒遅れてスタート音を鳴らす
+    console.log("プレミアム演出：遅れ！(チェリー or ボーナス)");
+    setTimeout(() => {
       sndStart.currentTime = 0;
       sndStart.play();
-    }
-    // ==========================================
-
-    for (let i = 0; i < 3; i++) {
-      isSpinning[i] = true;
-      if (spinFrameIds[i]) cancelAnimationFrame(spinFrameIds[i]);
-      lastReelUpdateTimes[i] = performance.now();
-
-      const spinLoop = (timestamp) => {
-        if (!isSpinning[i]) return;
-
-        const elapsed = timestamp - lastReelUpdateTimes[i];
-        lastReelUpdateTimes[i] = timestamp;
-
-        // スピード分だけ座標を減らす（リールは下へ進む＝インデックスが減る）
-        currentPos[i] -= elapsed * SPEED_PER_MS;
-
-        const len = reelStrips[i].length;
-        // シームレス処理：1周目の領域に入ったら、見た目を変えずに2周目へワープ
-        if (currentPos[i] < len) {
-          currentPos[i] += len;
-        }
-
-        // 役判定用に整数の currentSymbols も更新しておく
-        currentSymbols[i] = Math.round(currentPos[i]) % len;
-
-        updateReelDisplay(i, currentPos[i]);
-        spinFrameIds[i] = requestAnimationFrame(spinLoop);
-      };
-
-      spinFrameIds[i] = requestAnimationFrame(spinLoop);
-    }
+    }, 300);
+  } else {
+    // 【通常】
+    sndStart.currentTime = 0;
+    sndStart.play();
   }
-  
+  // ==========================================
+
+  // リールの回転処理
+  for (let i = 0; i < 3; i++) {
+    isSpinning[i] = true;
+    if (spinFrameIds[i]) cancelAnimationFrame(spinFrameIds[i]);
+    lastReelUpdateTimes[i] = performance.now();
+
+    const spinLoop = (timestamp) => {
+      if (!isSpinning[i]) return;
+
+      const elapsed = timestamp - lastReelUpdateTimes[i];
+      lastReelUpdateTimes[i] = timestamp;
+
+      // スピード分だけ座標を減らす（リールは下へ進む＝インデックスが減る）
+      currentPos[i] -= elapsed * SPEED_PER_MS;
+
+      const len = reelStrips[i].length;
+      // シームレス処理：1周目の領域に入ったら、見た目を変えずに2周目へワープ
+      if (currentPos[i] < len) {
+        currentPos[i] += len;
+      }
+
+      // 役判定用に整数の currentSymbols も更新しておく
+      currentSymbols[i] = Math.round(currentPos[i]) % len;
+
+      updateReelDisplay(i, currentPos[i]);
+      spinFrameIds[i] = requestAnimationFrame(spinLoop);
+    };
+
+    spinFrameIds[i] = requestAnimationFrame(spinLoop);
+  }
+}  
         
 
   const audioFiles = {
