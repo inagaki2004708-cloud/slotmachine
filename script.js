@@ -28,6 +28,7 @@
   let currentPos = [0, 0, 0]; 
     const SPEED_PER_MS = 1 / 35;
   let isPremiumMute = false;
+  let totalInvestment = 0; 
   
   // 3つのリールの図柄配列
   const reelStrips = [
@@ -216,6 +217,9 @@ function closeDepositModal() {
 function processDeposit(price, coinsToAdd) {
   credits += coinsToAdd; 
   
+  // 累計投資額に加算する処理を追加
+  totalInvestment += price;
+  
   // ▼ クレジットが最大値(50)を超えた場合、超過分を所持枚数(handCoins)に加算
   if (credits > 50) {
     handCoins += (credits - 50);
@@ -230,6 +234,7 @@ function processDeposit(price, coinsToAdd) {
   // 入金完了後、モーダルを閉じる
   closeDepositModal();
 }
+
 
   function startSpin() {
     if (credits + handCoins<= 0 && betAmount <= 0) {
@@ -273,6 +278,35 @@ if (btnStart) {
     document.getElementById('statBBCount').innerText = bbCount;
     document.getElementById('statRBCount').innerText = rbCount;
     document.getElementById('statTotalProb').innerText = totalProb > 0 ? totalProb : '-';
+
+    // ==========================================
+    // ▼ 【追加】投資額と現在の収支を計算・表示
+    // ==========================================
+    const totalCoins = handCoins + credits;      // 現在の総メダル数（手持ち＋クレジット）
+    const currentAsset = totalCoins * 20;        // 1枚 ＝ 20円換算
+    const currentBalance = currentAsset - totalInvestment; // 収支 ＝ 現在のメダル価値 － 投資総額
+
+    // 投資金額をカンマ区切りで表示
+    const investmentEl = document.getElementById('statInvestment');
+    if (investmentEl) {
+      investmentEl.innerText = totalInvestment.toLocaleString();
+    }
+
+    // 収支をカンマ区切りで表示（プラスなら '+' をつけ、状況に合わせて色を変更）
+    const balanceEl = document.getElementById('statBalance');
+    if (balanceEl) {
+      if (currentBalance > 0) {
+        balanceEl.innerText = '+' + currentBalance.toLocaleString();
+        balanceEl.style.color = '#ff3b30'; // プラス収支は赤色
+      } else if (currentBalance < 0) {
+        balanceEl.innerText = currentBalance.toLocaleString();
+        balanceEl.style.color = '#4488ff'; // マイナス収支は青色
+      } else {
+        balanceEl.innerText = '0';
+        balanceEl.style.color = '#ffffff'; // 収支ゼロは白色
+      }
+    }
+    // ==========================================
 
     // もし統計画面が開いたままなら、スランプグラフもリアルタイム更新する
     const statOverlay = document.getElementById('statOverlay');
@@ -760,11 +794,11 @@ if (activeBet === 1) {
       });
 
       // --- ③ チェリー固有の制御 ---
+      // 左リールの引き込み処理
       if (reelIndex === 0) {
         const hasCherry = testReel.includes('cherry');
         const isMiddleCherry = testReel[1] === 'cherry';
         
-        // ▼ ボーナス中・通常時共通：チェリーフラグ時のみ引き込みを許可する
         if (currentGameFlag === FLAGS.CHERRY || currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG) {
           if (hasCherry && !isMiddleCherry) hasTargetSmallRole = true; 
           if (isMiddleCherry) hasUnauthorizedWin = true;         
@@ -776,9 +810,30 @@ if (activeBet === 1) {
           if (hasCherry && !isBonus) hasUnauthorizedWin = true; 
         }
       }
-      // ※ 中リール(reelIndex === 1)の不要なペナルティ処理は削除しました      // --- ④ 代役（リーチ目）の判定 ---
+
+      // ▼▼ 追加：中・右リールの「単チェリー」「連チェリー」制御 ▼▼
+      if (reelIndex === 1 || reelIndex === 2) {
+        // すでに左リールにチェリーが停止しているか確認
+        let isLeftCherry = board[0] && (board[0][0] === 'cherry' || board[0][1] === 'cherry' || board[0][2] === 'cherry');
+        
+        if (isLeftCherry) {
+          const hasCherryInTest = testReel.includes('cherry');
+          
+          if (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG) {
+            // ボーナス重複時は【単チェリー】を作りたいので、チェリーを引き込まない（ペナルティ）
+            if (hasCherryInTest) hasUnauthorizedWin = true; 
+            else hasSubstitute = true; 
+          } else if (currentGameFlag === FLAGS.CHERRY) {
+            // 通常のチェリー時は【連チェリー】を作りたいので、チェリーを積極的に引き込む
+            if (hasCherryInTest) hasTargetSmallRole = true;
+          }
+        }
+      }
+
+      // --- ④ 代役（リーチ目）の判定 ---
       if (isBonus && !hasBonusWin && !isBonusTenpai) {
-        if (testReel.includes('cherry') || testReel.includes('clown') || testReel.includes('bar')) {
+        // ボーナス内部成立中で揃えられない場合は、BARなどを引き込んでリーチ目を形成しやすくする
+        if (testReel.includes('bar')) {
           hasSubstitute = true;
         }
       }
@@ -1145,19 +1200,28 @@ else activeLineIndices = [0, 1, 2, 3, 4];
 
    // --- 【修正版】チェリー（角チェリー＆中段チェリー）の判定と払い出し処理 ---
   let isCherryWon = false;
-if (activeBet === 1 && leftMid === 'cherry') isCherryWon = true; // 1枚掛けは中段のみ
-if (activeBet >= 2 && (leftTop === 'cherry' || leftMid === 'cherry' || leftBot === 'cherry')) isCherryWon = true; // 2枚掛け以上は角も有効
-   if (isCherryWon) {
+  let isTanCherry = false; // ▼ 単チェリー判定用フラグを追加
+
+  if (activeBet === 1 && leftMid === 'cherry') isCherryWon = true; 
+  if (activeBet >= 2 && (leftTop === 'cherry' || leftMid === 'cherry' || leftBot === 'cherry')) isCherryWon = true; 
+
+  if (isCherryWon) {
     const isMinorRoleWon = isGrapeWon || isReplayWon || isBellWon || isClownWon;
+    
+    // ▼ 単チェリーの視覚的判定（中リールにチェリーが止まっていないか）
+    const centerHasCherry = centerTop === 'cherry' || centerMid === 'cherry' || centerBot === 'cherry';
+    if (!centerHasCherry) {
+      isTanCherry = true; // 中リールにチェリーがいなければ実機同様「単チェリー」
+    }
+
     if (!isMinorRoleWon) {
-      // ボーナス中は1枚掛けで8枚、2枚掛け以上で14枚。通常時は2枚の払い出し
       if (bonusPayoutRemaining > 0) {
         pay += (activeBet === 1) ? 8 : 14; 
       } else {
         pay += 2;
       }
       isLineWon = true;
-      // --- 左リールのチェリー図柄を点滅アニメーションさせる ---
+      
       const tape0 = document.getElementById('reelTape0');
       const offset = -1;
       const totalCells = reelStrips[0].length * 3;
@@ -1172,15 +1236,16 @@ if (activeBet >= 2 && (leftTop === 'cherry' || leftMid === 'cherry' || leftBot =
       if (img) img.classList.add('blink-anim');
     }
 
-    // --- 通常時のチェリー重複ボーナス確定処理 ---
+    // --- 通常時のチェリー重複・単チェリー確定処理 ---
     if (bonusPayoutRemaining <= 0) {
-      // チェリー重複BIG / チェリー重複REG / 中段チェリー のフラグだった場合のみボーナス確定
-      if (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG || currentGameFlag === FLAGS.MIDDLE_CHERRY) {
+      // 内部フラグが重複チェリー、または「視覚的に単チェリーが停止した場合」
+      if (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG || currentGameFlag === FLAGS.MIDDLE_CHERRY || isTanCherry) {
         if (!isBonusInternal) {
           isBonusInternal = true;
-          internalBonusType = (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.MIDDLE_CHERRY) ? FLAGS.BIG : FLAGS.REG;
+          // 単チェリーが止まったら内部ボーナス確定（デフォルトはBIG扱い）
+          internalBonusType = (currentGameFlag === FLAGS.CHERRY_REG) ? FLAGS.REG : FLAGS.BIG;
         }
-        isReachWon = true;
+        isReachWon = true; 
       }
     }
   }
@@ -1201,8 +1266,12 @@ if (activeBet >= 2 && (leftTop === 'cherry' || leftMid === 'cherry' || leftBot =
   // 独自定義のリーチ目パターンもリーチ目として扱う
   if (isCustomReachWon) {
     isReachWon = true;
+    // 視覚的にリーチ目が止まった場合、問答無用で内部ボーナスを確定させる
+    if (!isBonusInternal && bonusPayoutRemaining <= 0) {
+      isBonusInternal = true;
+      internalBonusType = Math.random() < 0.5 ? FLAGS.BIG : FLAGS.REG; // リーチ目時はBIG/REGをランダム設定
+    }
   }
-
      if (isBonusWon) {
     // ▼ 追加: ボーナスが揃ったゲーム数とレインボー状態を保持
     const wonGameCount = displayGameCount; 
