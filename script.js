@@ -886,7 +886,8 @@ if (activeBet === 1) {
       // --- ④ 代役（リーチ目）の判定 ---
       if (isBonus && !hasBonusWin && !isBonusTenpai) {
         // ボーナス内部成立中で揃えられない場合は、BARなどを引き込んでリーチ目を形成しやすくする
-        if (testReel.includes('bar')) {
+        // 【修正】100%リーチ目にならないよう、確率(例: 30%)でバラケ目（ハズレ目）を許容する
+        if (testReel.includes('bar') && Math.random() < 0.7) {
           hasSubstitute = true;
         }
       }
@@ -1410,6 +1411,8 @@ else activeLineIndices = [0, 1, 2, 3, 4];
     indReplay.classList.add('on');
   }
 
+  const isMinorRoleWon = isGrapeWon || isReplayWon || isBellWon || isClownWon || (isCherryWon && !isBonusInternal);
+
   if (
     bonusPayoutRemaining <= 0 &&
     !isBonusWon &&
@@ -1419,12 +1422,15 @@ else activeLineIndices = [0, 1, 2, 3, 4];
     !gogoLamp.classList.contains('premium-only-gogo') &&
     !gogoLamp.classList.contains('premium-only-chance')
   ) {
-    // 後告知のタイミング（第3停止ボタンを離した時）
-    if (plannedNotifyTiming === 'post_silent' || plannedNotifyTiming === 'post_sound') {
-      triggerGogoLamp(plannedNotifySound);
-    } else {
-      // リーチ目等で突如ボーナスが確定した場合のセーフティ
-      triggerGogoLamp(false); 
+    // 【重要】小役が入賞したゲームは後告知を次ゲームに持ち越す（チェリー重複時を除く）
+    if (!isMinorRoleWon) {
+      // 後告知のタイミング（第3停止ボタンを離した時）
+      if (plannedNotifyTiming === 'post_silent' || plannedNotifyTiming === 'post_sound') {
+        triggerGogoLamp(plannedNotifySound);
+      } else {
+        // 先告知で光らなかった場合や、突如ボーナスが確定した場合のセーフティ
+        triggerGogoLamp(false); 
+      }
     }
   }
   // isBonusWon（ボーナスを揃えたゲーム）ではない場合のみ加算・減算する
