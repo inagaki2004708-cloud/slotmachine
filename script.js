@@ -29,6 +29,125 @@
     const SPEED_PER_MS = 1 / 35;
   let isPremiumMute = false;
   let totalInvestment = 0; 
+  // --- 告知タイミング制御用変数 ---
+let plannedNotifyTiming = null; // 'lever', 'reel', 'stop', 'post_silent', 'post_sound'
+let plannedNotifySound = false;
+let isLotteryDone = false; // 1ゲームにつき1回だけ抽選するためのフラグ
+
+// --- GOGOランプ点灯用共通関数 ---
+function triggerGogoLamp(hasSound) {
+  // すでに点灯している場合はスキップ
+  if (gogoLamp.classList.contains('on') || gogoLamp.classList.contains('rainbow') ||
+      gogoLamp.classList.contains('premium-only-gogo') || gogoLamp.classList.contains('premium-only-chance')) {
+    return;
+  }
+
+  // 音あり告知の場合
+  if (hasSound) {
+    playFlashZeroLatency();
+  }
+
+  // プレミアム点灯の振り分け
+  if (internalBonusType === FLAGS.BIG) {
+    const premiumRand = Math.random();
+    if (premiumRand < 0.05) gogoLamp.classList.add('rainbow');
+    else if (premiumRand < 0.10) gogoLamp.classList.add('premium-only-gogo');
+    else if (premiumRand < 0.15) gogoLamp.classList.add('premium-only-chance');
+    else gogoLamp.classList.add('on');
+  } else {
+    gogoLamp.classList.add('on'); // REGは通常点灯
+  }
+}
+
+function performLottery() {
+  const currentBet = betAmount;
+
+  // --- 内部フラグの抽選 (元のexecuteSpinから移植) ---
+  if (bonusPayoutRemaining > 0) {
+    const randBonus = Math.floor(Math.random() * 65536);
+    if (randBonus < 2000) currentGameFlag = FLAGS.CHERRY;
+    else currentGameFlag = FLAGS.GRAPE;
+  } else {
+    if (isForcedRenchan && gameCount === nextBonusGameCount) {
+      currentGameFlag = Math.random() < 0.6 ? FLAGS.BIG : FLAGS.REG;
+      isBonusInternal = true;
+      internalBonusType = currentGameFlag;
+      isForcedRenchan = false;
+    } else {
+      const rand = Math.floor(Math.random() * 65536);
+      let prob = { ...PROBABILITY_TABLE[currentSettingLevel] };
+      
+      if (currentBet === 1) {
+        prob.grape = 2324; prob.bell = 4; prob.clown = 4; prob.replay = 8978;
+      }
+      
+      if (isBonusInternal) {
+        if (rand < prob.grape) currentGameFlag = FLAGS.GRAPE;
+        else if (rand < prob.grape + prob.replay) currentGameFlag = FLAGS.REPLAY;
+        else if (rand < prob.grape + prob.replay + prob.cherry) currentGameFlag = FLAGS.CHERRY;
+        else currentGameFlag = internalBonusType;
+      } else {
+        let acc = 0;
+        const hit = (p, flag) => {
+          acc += p;
+          if (currentGameFlag !== FLAGS.HAZURE) return;
+          if (rand < acc) currentGameFlag = flag;
+        };
+
+        currentGameFlag = FLAGS.HAZURE;
+        hit(20, FLAGS.MIDDLE_CHERRY);
+        hit(prob.big, FLAGS.BIG);
+        hit(prob.c_big, FLAGS.CHERRY_BIG);
+        hit(prob.reg, FLAGS.REG);
+        hit(prob.c_reg, FLAGS.CHERRY_REG);
+        hit(prob.grape, FLAGS.GRAPE);
+        hit(prob.replay, FLAGS.REPLAY);
+        hit(prob.cherry, FLAGS.CHERRY);
+        hit(prob.bell, FLAGS.BELL);
+        hit(prob.clown, FLAGS.CLOWN);
+        
+        if (currentGameFlag === FLAGS.BIG || currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.MIDDLE_CHERRY) {
+          isBonusInternal = true;
+          internalBonusType = FLAGS.BIG;
+        } else if (currentGameFlag === FLAGS.REG || currentGameFlag === FLAGS.CHERRY_REG) {
+          isBonusInternal = true;
+          internalBonusType = FLAGS.REG;
+        }
+      }
+    }
+  }
+
+  currentFlag = (currentGameFlag === FLAGS.BIG || currentGameFlag === FLAGS.REG) ? 5 : 0;
+  plannedNotifyTiming = null;
+  plannedNotifySound = false;
+
+  // --- 告知タイミングの振り分け ---
+  if ((currentFlag === 5 || isBonusInternal) && 
+      !gogoLamp.classList.contains('on') && 
+      !gogoLamp.classList.contains('rainbow') &&
+      !gogoLamp.classList.contains('premium-only-gogo') &&
+      !gogoLamp.classList.contains('premium-only-chance')) {
+    
+    const r = Math.random();
+    if (r <= 0.0833) {
+      plannedNotifyTiming = 'lever'; // レバーオン時 約8.33%
+    } else if (r <= 0.1666) {
+      plannedNotifyTiming = 'reel'; // リール始動時 約8.33%
+    } else if (r <= 0.25) {
+      plannedNotifyTiming = 'stop'; // ストップボタン受付時 約8.33%
+    } else if (r <= 0.58) {
+      plannedNotifyTiming = 'post_silent'; // 後告知+音なし 約33%
+    } else {
+      plannedNotifyTiming = 'post_sound'; // 後告知+音あり 約33% (残り)
+    }
+
+    // 後告知+音ありの場合、BIG成立時のみ音を鳴らす（REGで鳴らすと不自然なため）
+    if (plannedNotifyTiming === 'post_sound' && internalBonusType === FLAGS.BIG) {
+      plannedNotifySound = true;
+    }
+  }
+  isLotteryDone = true;
+}
   
   // 3つのリールの図柄配列
   const reelStrips = [
@@ -260,6 +379,12 @@ if (btnStart) {
 
     if (isSpinning[0] || isSpinning[1] || isSpinning[2] || isBonusEnding) return;
     if (currentState !== STATES.BET) return;
+    if (!isLotteryDone) {
+      performLottery();
+    }
+    if (plannedNotifyTiming === 'lever') {
+      triggerGogoLamp(plannedNotifySound);
+    }
     const now = Date.now();
     const elapsed = now - lastStartTime;
     const waitTime = Math.max(0, 4100 - elapsed);
@@ -455,99 +580,40 @@ function drawSlumpGraph() {
       cherry: 7536  
     };
 
-    // ▼▼ 修正箇所：ボーナス中と通常時で処理を完全に分ける ▼▼
-    if (bonusPayoutRemaining > 0) { 
-      // ボーナス中の抽選（ぶどうとチェリーを別々に抽選）
-      const randBonus = Math.floor(Math.random() * 65536);
-      if (randBonus < 2000) { 
-        // 2000/65536 = 約1/32 の確率でチェリー
-        currentGameFlag = FLAGS.CHERRY;
-      } else {
-        // 残りはすべてぶどう
-        currentGameFlag = FLAGS.GRAPE;
-      }
-    } else {      // ーーー ここから下はすべてボーナス中以外（通常時）のみ実行 ーーー      
-      // ▼ ジャグ連（強制ボーナス）の判定 ▼
-      if (isForcedRenchan && gameCount === nextBonusGameCount) {
-        currentGameFlag = Math.random() < 0.6 ? FLAGS.BIG : FLAGS.REG;
-        isBonusInternal = true;
-        internalBonusType = currentGameFlag;
-        isForcedRenchan = false; 
-      } else {
-        const rand = Math.floor(Math.random() * 65536); 
-        let prob = { ...PROBABILITY_TABLE[currentSettingLevel] };
-        
-        if (currentBet === 1) {
-          prob.grape = 2324;
-          prob.bell = 4;
-          prob.clown = 4;
-          prob.replay = 8978; 
-        }
-        
-        if (isBonusInternal) {
-          if (rand < prob.grape) currentGameFlag = FLAGS.GRAPE;
-          else if (rand < prob.grape + prob.replay) currentGameFlag = FLAGS.REPLAY;
-          else if (rand < prob.grape + prob.replay + prob.cherry) currentGameFlag = FLAGS.CHERRY;
-          else currentGameFlag = internalBonusType;
-        } else {
-          let acc = 0;
-          const hit = (p, flag) => {
-            acc += p;
-            if (currentGameFlag !== FLAGS.HAZURE) return; 
-            if (rand < acc) currentGameFlag = flag;
-          };
+    function executeSpin() {
+  lastStartTime = Date.now();
 
-          currentGameFlag = FLAGS.HAZURE;
-          hit(20, FLAGS.MIDDLE_CHERRY);
-          hit(prob.big,    FLAGS.BIG);
-          hit(prob.c_big,  FLAGS.CHERRY_BIG); 
-          hit(prob.reg,    FLAGS.REG);
-          hit(prob.c_reg,  FLAGS.CHERRY_REG); 
-          hit(prob.grape,  FLAGS.GRAPE);
-          hit(prob.replay, FLAGS.REPLAY);
-          hit(prob.cherry, FLAGS.CHERRY);
-          hit(prob.bell,   FLAGS.BELL);
-          hit(prob.clown,  FLAGS.CLOWN);
-          
-          if (currentGameFlag === FLAGS.BIG || currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.MIDDLE_CHERRY) {
-            isBonusInternal = true;
-            internalBonusType = FLAGS.BIG;
-          } else if (currentGameFlag === FLAGS.REG || currentGameFlag === FLAGS.CHERRY_REG) {
-            isBonusInternal = true;
-            internalBonusType = FLAGS.REG;
-          }
-        }
-      }
-    } 
-    
-    currentFlag = (currentGameFlag === FLAGS.BIG || currentGameFlag === FLAGS.REG) ? 5 : 0;
-    
-    // ランプが未点灯の時のみ判定
-    if ((currentFlag === 5 || isBonusInternal) && 
-        !gogoLamp.classList.contains('on') && 
-        !gogoLamp.classList.contains('rainbow') &&
-        !gogoLamp.classList.contains('premium-only-gogo') &&
-        !gogoLamp.classList.contains('premium-only-chance')) {
-      
-      // 先告知の発生確率（25%）
-      if (Math.random() < 0.25) { 
-        if (internalBonusType === FLAGS.BIG) {
-          // BIG確定時のプレミア振り分け (例: 各5%の確率でプレミア選択)
-          const premiumRand = Math.random();
-          if (premiumRand < 0.05) {
-            gogoLamp.classList.add('rainbow');
-          } else if (premiumRand < 0.10) {
-            gogoLamp.classList.add('premium-only-gogo');
-          } else if (premiumRand < 0.15) {
-            gogoLamp.classList.add('premium-only-chance');
-          } else {
-            gogoLamp.classList.add('on'); // 通常点灯
-          }
-        } else {
-          // REGの場合は必ず通常点灯
-          gogoLamp.classList.add('on');
-        }
-      }
+  document.querySelectorAll('.blink-anim').forEach(img => img.classList.remove('blink-anim'));
+  activeBet = betAmount;
+  betAmount = 0;
+  indReplay.classList.remove('on');
+  isStopAnimFinished = false;
+  document.querySelector('.reels-window').classList.add('spinning');
+
+  // ▼ 追加：リール始動時 / ストップボタン受付時の告知 ▼
+  if (plannedNotifyTiming === 'reel') {
+    triggerGogoLamp(plannedNotifySound);
+  }
+  if (plannedNotifyTiming === 'stop') {
+    // リールが一定速度に達し、ボタンが有効になるタイミングを擬似的に表現 (100ms遅延)
+    setTimeout(() => {
+      triggerGogoLamp(plannedNotifySound);
+    }, 100);
+  }
+  // ▲ ここまで ▲
+
+  gameCount++;
+  if (bonusPayoutRemaining <= 0 && !isBonusEnding) {
+    displayGameCount++;
+  }
+  updateDisplay();
+  changeState(STATES.SPIN);
+  
+  isLotteryDone = false; // 次ゲームのために抽選フラグをリセット
+
+  // ==========================================
+  // ▼ プレミアム演出（無音・遅れ）の抽選と再生 ▼
+  // (これ以降の isSilent... などの記述はそのまま残してください)
     }
     gameCount++;
     if (bonusPayoutRemaining <= 0 && !isBonusEnding) {
@@ -1378,26 +1444,14 @@ else activeLineIndices = [0, 1, 2, 3, 4];
     !gogoLamp.classList.contains('premium-only-gogo') &&
     !gogoLamp.classList.contains('premium-only-chance')
   ) {
-    playFlashZeroLatency();
-    
-    if (internalBonusType === FLAGS.BIG) {
-      // BIG確定時のプレミア振り分け (先告知と同じ確率設定)
-      const premiumRand = Math.random();
-      if (premiumRand < 0.05) {
-        gogoLamp.classList.add('rainbow');
-      } else if (premiumRand < 0.10) {
-        gogoLamp.classList.add('premium-only-gogo');
-      } else if (premiumRand < 0.15) {
-        gogoLamp.classList.add('premium-only-chance');
-      } else {
-        gogoLamp.classList.add('on'); // 通常点灯
-      }
+    // 後告知のタイミング（第3停止ボタンを離した時）
+    if (plannedNotifyTiming === 'post_silent' || plannedNotifyTiming === 'post_sound') {
+      triggerGogoLamp(plannedNotifySound);
     } else {
-      // REGの場合は必ず通常点灯
-      gogoLamp.classList.add('on');
+      // リーチ目等で突如ボーナスが確定した場合のセーフティ
+      triggerGogoLamp(false); 
     }
   }
-
   // isBonusWon（ボーナスを揃えたゲーム）ではない場合のみ加算・減算する
   if (bonusPayoutRemaining > 0 && !isBonusWon) {
     bonusPayoutRemaining -= pay;
