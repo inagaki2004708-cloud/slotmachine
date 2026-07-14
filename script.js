@@ -649,7 +649,7 @@ function drawSlumpGraph() {
   // 整数ではなく、小数の position を使って滑らかに％を計算
   const percentage = ((position + offset) / totalCells) * 100;
   
-  tape.style.transform = `translateY(-${percentage}%)`;
+  tape.style.transform = `translateY(-${percentage}%) translateZ(0)`;
 }
   
   function getStopPosition(reelIndex, pressIdx) {
@@ -1163,9 +1163,9 @@ if (activeBet >= 2 && (leftTop === 'cherry' || leftMid === 'cherry' || leftBot =
       const totalCells = reelStrips[0].length * 3;
       let cherryOffset = 0;
 
-      if (leftTop === 'cherry') cherryOffset = -1;
-      else if (leftMid === 'cherry') cherryOffset = 0;
-      else if (leftBot === 'cherry') cherryOffset = 1;
+      if (leftTop === 'cherry') cherryOffset = 0;
+      else if (leftMid === 'cherry') cherryOffset = 1;
+      else if (leftBot === 'cherry') cherryOffset = 2;
 
       const cellIndex = (Math.round(currentPos[0]) + cherryOffset + offset + totalCells) % totalCells;
       const img = tape0.children[cellIndex]?.querySelector('img');
@@ -1674,8 +1674,6 @@ function initReelTapes() {
       } else if (symbolName === 'clown') {
         img.classList.add('clown-img');
       }
-      
-      cell.appendChild(img);
       
       cell.appendChild(img);
       tape.appendChild(cell);
