@@ -1239,13 +1239,14 @@ else activeLineIndices = [0, 1, 2, 3, 4];
 
     // --- 通常時のチェリー重複・単チェリー確定処理 ---
     if (bonusPayoutRemaining <= 0) {
-      // 内部フラグが重複チェリー、または「視覚的に単チェリーが停止した場合」
-      if (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG || currentGameFlag === FLAGS.MIDDLE_CHERRY || isTanCherry) {
+      // 実機同様、内部フラグが重複チェリーの場合のみボーナスを確定させる
+      // ※リール制御(getStopPosition)側で、重複時は強制的に単チェリー(非テンパイ)になり、通常時は連チェリーになります。
+      if (currentGameFlag === FLAGS.CHERRY_BIG || currentGameFlag === FLAGS.CHERRY_REG || currentGameFlag === FLAGS.MIDDLE_CHERRY) {
         if (!isBonusInternal) {
           isBonusInternal = true;
-          // 単チェリーが止まったら内部ボーナス確定（デフォルトはBIG扱い）
           internalBonusType = (currentGameFlag === FLAGS.CHERRY_REG) ? FLAGS.REG : FLAGS.BIG;
         }
+        // 重複フラグ時はリーチ目（ペカり）扱いにする
         isReachWon = true; 
       }
     }

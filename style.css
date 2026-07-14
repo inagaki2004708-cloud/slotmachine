@@ -1078,7 +1078,7 @@ img {
     border-radius: 50%; /* 正円を維持 */
   }
   .sidebar-btn-start {
-    width: 57%; 
+    width: 59%; 
     height: 60px;
     border-radius: 50%;
     transform: translateX(-10px);
