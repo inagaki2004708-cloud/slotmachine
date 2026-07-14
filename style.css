@@ -1007,7 +1007,7 @@ img {
   background-color: #c9302c;
 }
  @media (max-width: 850px) {
-  /* ゲーム全体のコンテナを画面の一番上から配置する */
+  /* スマホ画面　ゲーム全体のコンテナを画面の一番上から配置する */
   .game-container {
     flex-direction: column;
     justify-content: flex-start; /* 中身を上寄せにする */
@@ -1077,7 +1077,7 @@ img {
     border-radius: 50%; /* 正円を維持 */
   }
   .sidebar-btn-start {
-    width: 60%; 
+    width: 40%; 
     height: 60px;
     border-radius: 50%;
     transform: translateX(-10px);
